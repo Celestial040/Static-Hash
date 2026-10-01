@@ -90,6 +90,57 @@ Status header_parse(const FileString *filestring, size_t *line_count, MappingMod
     return NO_ERROR;
 }
 
+Status body_parse_key_value(const FileString *filestring, size_t *line_count) {
+    TokenPointer tokenpointer;
+
+    while (1) {
+        tokenpointer = lexer_scan(filestring, line_count);
+
+        if (tokenpointer.token == TOKEN_EOF) {
+            break;
+        }
+
+        if (tokenpointer.token != TOKEN_IDENTIFIER) {
+            return MISMATCH_EXPECTATION;
+        }
+
+        printf("%.*s \n",(unsigned int)tokenpointer.len, filestring->start+tokenpointer.start);
+
+        tokenpointer = lexer_scan(filestring, line_count);
+
+        if (tokenpointer.token == TOKEN_EOF) {
+            break;
+        }
+
+        if (tokenpointer.token != TOKEN_COMMA) {
+            return MISMATCH_EXPECTATION;
+        }
+
+        tokenpointer = lexer_scan(filestring, line_count);
+
+        if (tokenpointer.token == TOKEN_EOF) {
+            break;
+        }
+
+        if (tokenpointer.token != TOKEN_NUMERIC_LITERAL) {
+            return MISMATCH_EXPECTATION;
+        }
+
+        printf("%.*s \n",(unsigned int)tokenpointer.len, filestring->start+tokenpointer.start);
+
+        tokenpointer = lexer_scan(filestring, line_count);
+
+        if (tokenpointer.token == TOKEN_EOF) {
+            break;
+        }
+
+        if (tokenpointer.token != TOKEN_ENDLINE) {
+            return MISMATCH_EXPECTATION;
+        }
+    }
+
+    return NO_ERROR;
+}
 
 Status parser_start(const FileString *filestring) {
     size_t line_count = 0;
@@ -98,6 +149,20 @@ Status parser_start(const FileString *filestring) {
 
     status = header_parse(filestring, &line_count, &mapping_mode);
     if (status != NO_ERROR) {return status;}
+
+
+    switch (mapping_mode) {
+        case KEY_VALUE_PAIR:
+            status = body_parse_key_value(filestring, &line_count);
+            if (status != NO_ERROR) {return status;}
+            break;
+
+        default:
+            break;
+    }
+
+
+
 
     return status;
 }
