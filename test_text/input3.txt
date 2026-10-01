@@ -1,0 +1,7 @@
+{struct} = { unsigned char month, unsigned char day}
+
+{key}    , {month}  ,  {day}
+January  ,    1     ,   31
+February ,    2     ,   28
+March    ,    3     ,   31
+April    ,    4     ,   30

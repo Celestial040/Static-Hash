@@ -1,0 +1,6 @@
+{key} , {value}
+hello , 0
+world , 1
+okay  , 2
+no    , 3
+yes   , 4

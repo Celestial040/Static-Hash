@@ -1,0 +1,7 @@
+{key}
+hello
+world
+okay
+no
+yes
+key
