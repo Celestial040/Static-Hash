@@ -1,0 +1,6 @@
+{key}
+hello = 5
+world
+okay
+no
+yes
