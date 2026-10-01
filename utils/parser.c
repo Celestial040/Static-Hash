@@ -19,21 +19,19 @@ enum {
 Status header_parse(const FileString *filestring, size_t *line_count, MappingMode *mapping_mode) {
     TokenPointer tokenpointer;
     const char *expected_headers[3] = {"struct", "key", "value"};
-        unsigned char headers_loop = 0;
+    unsigned char headers_loop = 0;
 
-    tokenpointer = lexer_scan(filestring, line_count);
+    tokenpointer = lexer_scan(filestring);
 
     if (tokenpointer.token != TOKEN_OPEN_CURLY_BRACKET) {
         return MISMATCH_EXPECTATION;
     }
 
-    tokenpointer = lexer_scan(filestring, line_count);
+    tokenpointer = lexer_scan(filestring);
 
     if (tokenpointer.token != TOKEN_IDENTIFIER) {
         return MISMATCH_EXPECTATION;
     }
-
-
 
     for (; headers_loop < 2; headers_loop++) {
         if (strncmp(filestring->start + tokenpointer.start, expected_headers[headers_loop], tokenpointer.len) == 0) {
@@ -46,13 +44,13 @@ Status header_parse(const FileString *filestring, size_t *line_count, MappingMod
     }
 
 
-    tokenpointer = lexer_scan(filestring, line_count);
+    tokenpointer = lexer_scan(filestring);
 
     if (tokenpointer.token != TOKEN_CLOSE_CURLY_BRACKET) {
         return MISMATCH_EXPECTATION;
     }
 
-    tokenpointer = lexer_scan(filestring, line_count);
+    tokenpointer = lexer_scan(filestring);
 
 
     if (tokenpointer.token != TOKEN_COMMA && tokenpointer.token != TOKEN_ENDLINE) {
@@ -66,13 +64,13 @@ Status header_parse(const FileString *filestring, size_t *line_count, MappingMod
         return NO_ERROR;
     }
 
-    tokenpointer = lexer_scan(filestring, line_count);
+    tokenpointer = lexer_scan(filestring);
 
     if (tokenpointer.token != TOKEN_OPEN_CURLY_BRACKET) {
         return MISMATCH_EXPECTATION;
     }
 
-    tokenpointer = lexer_scan(filestring, line_count);
+    tokenpointer = lexer_scan(filestring);
 
     if (tokenpointer.token != TOKEN_IDENTIFIER) {
         return MISMATCH_EXPECTATION;
@@ -82,19 +80,19 @@ Status header_parse(const FileString *filestring, size_t *line_count, MappingMod
         return MISMATCH_EXPECTATION;
     }
 
-    tokenpointer = lexer_scan(filestring, line_count);
+    tokenpointer = lexer_scan(filestring);
 
     if (tokenpointer.token != TOKEN_CLOSE_CURLY_BRACKET) {
         return MISMATCH_EXPECTATION;
     }
 
-    tokenpointer = lexer_scan(filestring, line_count);
+    tokenpointer = lexer_scan(filestring);
 
     if (tokenpointer.token != TOKEN_ENDLINE) {
         return MISMATCH_EXPECTATION;
     }
 
-
+    *line_count += 1;
 
     return NO_ERROR;
 }
@@ -102,54 +100,60 @@ Status header_parse(const FileString *filestring, size_t *line_count, MappingMod
 Status body_parse_key_value(const FileString *filestring, size_t *line_count) {
     TokenPointer tokenpointer;
     size_t body_start_index = get_lexer_tail();
-    printf("%c \n", filestring->start[body_start_index]);
-
+    unsigned char longest_keyword_len = 0;
+    size_t keyword_count = 0;
+    size_t i = 0;
 
     while (1) {
-        tokenpointer = lexer_scan(filestring, line_count);
+        tokenpointer = lexer_scan(filestring);
 
-        if (tokenpointer.token == TOKEN_EOF) {
+        if (keyword_count > 0 && tokenpointer.token == TOKEN_EOF) {
             break;
         }
+
+        *line_count += 1;
 
         if (tokenpointer.token != TOKEN_IDENTIFIER) {
             return MISMATCH_EXPECTATION;
         }
 
-        printf("%.*s \n",(unsigned int)tokenpointer.len, filestring->start+tokenpointer.start);
-
-        tokenpointer = lexer_scan(filestring, line_count);
-
-        if (tokenpointer.token == TOKEN_EOF) {
-            break;
+        if (tokenpointer.len > 255) {
+            return STRING_TOO_LONG;
         }
+
+        if (tokenpointer.len > longest_keyword_len) {
+            longest_keyword_len = (unsigned char) tokenpointer.len;
+        }
+
+        tokenpointer = lexer_scan(filestring);
 
         if (tokenpointer.token != TOKEN_COMMA) {
             return MISMATCH_EXPECTATION;
         }
 
-        tokenpointer = lexer_scan(filestring, line_count);
-
-        if (tokenpointer.token == TOKEN_EOF) {
-            break;
-        }
+        tokenpointer = lexer_scan(filestring);
 
         if (tokenpointer.token != TOKEN_NUMERIC_LITERAL) {
             return MISMATCH_EXPECTATION;
         }
 
-        printf("%.*s \n",(unsigned int)tokenpointer.len, filestring->start+tokenpointer.start);
+        tokenpointer = lexer_scan(filestring);
 
-        tokenpointer = lexer_scan(filestring, line_count);
-
-        if (tokenpointer.token == TOKEN_EOF) {
-            break;
-        }
-
-        if (tokenpointer.token != TOKEN_ENDLINE) {
+        if (tokenpointer.token != TOKEN_ENDLINE && tokenpointer.token != TOKEN_EOF) {
             return MISMATCH_EXPECTATION;
         }
+
+        keyword_count++;
     }
+
+    set_lexer_index(body_start_index);
+
+    printf("%ld, %d\n", keyword_count, longest_keyword_len);
+
+    for (; i < keyword_count; i++) {
+        tokenpointer = lexer_scan(filestring);
+    }
+
 
     return NO_ERROR;
 }
@@ -172,9 +176,6 @@ Status parser_start(const FileString *filestring) {
         default:
             break;
     }
-
-
-
 
     return status;
 }

@@ -41,7 +41,10 @@ void status_print(Status status) {
             printf("INTEGER_OVERFLOW\n");
             break;
         case INDEX_OUT_OF_BOUND:
-            printf("INTEGER_OVERFLOW\n");
+            printf("INDEX_OUT_OF_BOUND\n");
+            break;
+        case STRING_TOO_LONG:
+            printf("STRING_TOO_LONG\n");
             break;
         default:
             printf("UNKNOWN_STATUS\n");

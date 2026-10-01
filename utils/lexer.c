@@ -1,6 +1,5 @@
 #include "lexer.h"
 #include "char_manip.h"
-#include <stdio.h>
 #include <stdlib.h>
 
 TypeMode type_check(const char target) {
@@ -46,17 +45,15 @@ static TokenPointer tokenpointer;
 
 
 void set_lexer_index(size_t checkpoint) {
-    index = checkpoint;
-    trail = checkpoint;
+    index = trail = checkpoint;
+    prev_mode = current_mode = TAB_SPACE;
 }
 
 size_t get_lexer_tail(void) {
     return trail;
 }
 
-
-TokenPointer lexer_scan(const FileString *file_string, size_t *line_count) {
-
+TokenPointer lexer_scan(const FileString *file_string) {
     tokenpointer.token = TOKEN_UNKNOWN;
     tokenpointer.start = 0;
     tokenpointer.len = 0;
@@ -64,7 +61,7 @@ TokenPointer lexer_scan(const FileString *file_string, size_t *line_count) {
     while (index < file_string->length) {
         current_mode = type_check(file_string->start[index]);
 
-        if (prev_mode == NUMERIC_LITERAL && is_numeric(file_string->start[index])) { current_mode = NUMERIC_LITERAL; }
+        if (prev_mode == NUMERIC_LITERAL && is_numeric(file_string->start[index])) { current_mode = NUMERIC_LITERAL;}
 
         if (current_mode != prev_mode || (current_mode == SYMBOL && prev_mode == SYMBOL)) {
 
@@ -116,7 +113,6 @@ TokenPointer lexer_scan(const FileString *file_string, size_t *line_count) {
                     tokenpointer.token = TOKEN_ENDLINE;
                     tokenpointer.start = trail;
                     tokenpointer.len = index - trail;
-                    *line_count += 1;
 
                     trail = index;
                     prev_mode = current_mode;
@@ -128,12 +124,10 @@ TokenPointer lexer_scan(const FileString *file_string, size_t *line_count) {
                     break;
             }
         }
-
-
         index++;
     }
 
-    if (index == file_string->length) {tokenpointer.token = TOKEN_EOF;}
+    if (index >= file_string->length) {tokenpointer.token = TOKEN_EOF;}
 
     return tokenpointer;
 }
