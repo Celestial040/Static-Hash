@@ -54,5 +54,8 @@ typedef struct TokenPointer {
 } TokenPointer;
 
 TokenPointer lexer_scan(const FileString *file_string, size_t *line_count);
+void set_lexer_index(size_t checkpoint);
+size_t get_lexer_tail(void);
+
 
 #endif

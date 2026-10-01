@@ -3,6 +3,7 @@
 #include "lexer.h"
 #include "status.h"
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 
@@ -12,6 +13,8 @@ enum {
     KEY_VALUE_PAIR,
     STRUCT_MAPPING
 };
+
+
 
 Status header_parse(const FileString *filestring, size_t *line_count, MappingMode *mapping_mode) {
     TokenPointer tokenpointer;
@@ -30,6 +33,8 @@ Status header_parse(const FileString *filestring, size_t *line_count, MappingMod
         return MISMATCH_EXPECTATION;
     }
 
+
+
     for (; headers_loop < 2; headers_loop++) {
         if (strncmp(filestring->start + tokenpointer.start, expected_headers[headers_loop], tokenpointer.len) == 0) {
             break;
@@ -40,6 +45,7 @@ Status header_parse(const FileString *filestring, size_t *line_count, MappingMod
         return MISMATCH_EXPECTATION;
     }
 
+
     tokenpointer = lexer_scan(filestring, line_count);
 
     if (tokenpointer.token != TOKEN_CLOSE_CURLY_BRACKET) {
@@ -47,6 +53,7 @@ Status header_parse(const FileString *filestring, size_t *line_count, MappingMod
     }
 
     tokenpointer = lexer_scan(filestring, line_count);
+
 
     if (tokenpointer.token != TOKEN_COMMA && tokenpointer.token != TOKEN_ENDLINE) {
         return MISMATCH_EXPECTATION;
@@ -87,11 +94,16 @@ Status header_parse(const FileString *filestring, size_t *line_count, MappingMod
         return MISMATCH_EXPECTATION;
     }
 
+
+
     return NO_ERROR;
 }
 
 Status body_parse_key_value(const FileString *filestring, size_t *line_count) {
     TokenPointer tokenpointer;
+    size_t body_start_index = get_lexer_tail();
+    printf("%c \n", filestring->start[body_start_index]);
+
 
     while (1) {
         tokenpointer = lexer_scan(filestring, line_count);
