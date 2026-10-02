@@ -2,6 +2,7 @@
 #include "file_loader.h"
 #include "lexer.h"
 #include "status.h"
+#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -99,14 +100,15 @@ Status header_parse(const FileString *filestring, size_t *line_count, MappingMod
 
 Status body_parse_key_value(const FileString *filestring, size_t *line_count) {
     TokenPointer tokenpointer;
+    unsigned char *keyword_collections = NULL;
+    unsigned short *values_pair = NULL;
     size_t body_start_index = get_lexer_tail();
     unsigned char longest_keyword_len = 0;
     size_t keyword_count = 0;
-    size_t i = 0;
+    size_t i , j;
 
     while (1) {
         tokenpointer = lexer_scan(filestring);
-
         if (keyword_count > 0 && tokenpointer.token == TOKEN_EOF) {
             break;
         }
@@ -150,8 +152,43 @@ Status body_parse_key_value(const FileString *filestring, size_t *line_count) {
 
     printf("%ld, %d\n", keyword_count, longest_keyword_len);
 
-    for (; i < keyword_count; i++) {
+    keyword_collections = (unsigned char *) calloc(keyword_count * longest_keyword_len , sizeof(char));
+    if (keyword_collections == NULL) {
+        return ALLOCATION_ERROR;
+    }
+
+    values_pair = (unsigned short *) malloc(sizeof(unsigned short) * keyword_count);
+    if (values_pair == NULL) {
+        return ALLOCATION_ERROR;
+    }
+
+    for (i = 0; i < keyword_count; i++) {
         tokenpointer = lexer_scan(filestring);
+
+        for (j = 0; j < tokenpointer.len; j++) {
+            keyword_collections[j * 5 + i] = (unsigned char) filestring->start[tokenpointer.start + j];
+        }
+
+        tokenpointer = lexer_scan(filestring);
+
+        tokenpointer = lexer_scan(filestring);
+
+        tokenpointer = lexer_scan(filestring);
+
+    }
+
+    for (i = 0; i < 5; i++) {
+        for (j = i*5; j < (i+1)*5; j++) {
+            if (keyword_collections[j] != 0) {
+                printf("%c ", keyword_collections[j]);
+            }
+            else {
+                printf("  ");
+            }
+        }
+
+        printf("\n");
+
     }
 
 
