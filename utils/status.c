@@ -3,52 +3,30 @@
 #include <stdio.h>
 
 void status_print(Status status) {
-    switch (status) {
-        case NO_ERROR:
-            printf("NO_ERROR\n");
-            break;
-        case ALLOCATION_ERROR:
-            printf("ALLOCATION_ERROR\n");
-            break;
-        case FILE_NOT_FOUND:
-            printf("FILE_NOT_FOUND\n");
-            break;
-        case NULL_POINTER:
-            printf("NULL_POINTER\n");
-            break;
-        case FIELD_MATCH_NOT_FOUND:
-            printf("FIELD_MATCH_NOT_FOUND\n");
-            break;
-        case ITEM_NOT_FOUND:
-            printf("ITEM_NOT_FOUND\n");
-            break;
-        case ITEM_FOUND:
-            printf("ITEM_FOUND\n");
-            break;
-        case STRING_EMPTY:
-            printf("STRING_EMPTY\n");
-            break;
-        case READ_ERROR:
-            printf("READ_ERROR\n");
-            break;
-        case MISMATCH_EXPECTATION:
-            printf("MISMATCH_EXPECTATION\n");
-            break;
-        case DIGITS_TOO_LONG:
-            printf("DIGITS_TOO_LONG\n");
-            break;
-        case INTEGER_OVERFLOW:
-            printf("INTEGER_OVERFLOW\n");
-            break;
-        case INDEX_OUT_OF_BOUND:
-            printf("INDEX_OUT_OF_BOUND\n");
-            break;
-        case STRING_TOO_LONG:
-            printf("STRING_TOO_LONG\n");
-            break;
-        default:
-            printf("UNKNOWN_STATUS\n");
-            break;
+
+    const char *error_strings[15] = {
+        "NO_ERROR",
+        "ALLOCATION_ERROR",
+        "FILE_NOT_FOUND",
+        "NULL_POINTER",
+        "STRING_EMPTY",
+        "FIELD_MATCH_NOT_FOUND",
+        "ITEM_NOT_FOUND",
+        "ITEM_FOUND",
+        "READ_ERROR",
+        "MISMATCH_EXPECTATION",
+        "INTEGER_OVERFLOW",
+        "INDEX_OUT_OF_BOUND",
+        "STRING_TOO_LONG",
+        "DIGITS_TOO_LONG",
+        "MAX_LIMIT_EXCEEDED"
+    };
+
+    if (status > 14) {
+        printf("UNKNOWN_ERROR");
+        return;
     }
 
+    printf("%s \n", error_strings[status]);
+    return;
 }

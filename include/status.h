@@ -14,11 +14,12 @@ enum {
     ITEM_FOUND,
     READ_ERROR,
     MISMATCH_EXPECTATION,
-    DIGITS_TOO_LONG,
     INTEGER_OVERFLOW,
     INDEX_OUT_OF_BOUND,
-    STRING_TOO_LONG
-} ;
+    STRING_TOO_LONG,
+    DIGITS_TOO_LONG,
+    MAX_LIMIT_EXCEEDED
+};
 
 
 void status_print(Status status);

@@ -1,5 +1,6 @@
 #include <stddef.h>
 #include <stdint.h>
+#include "status.h"
 
 unsigned char is_uppercase_alphabet(const char target) {
     return target >= 65 && target <= 90;
@@ -31,4 +32,27 @@ unsigned char is_endline(const char target) {
 
 unsigned char is_whitespace(const char target) {
     return is_tab_space(target)||is_endline(target);
+}
+
+Status string_to_unsigned_short(const char *src, const size_t src_len, unsigned short *output) {
+    size_t i = 0;
+    unsigned short total = 0;
+    unsigned short power = 1;
+
+    if (src_len >= 5) {
+        return DIGITS_TOO_LONG;
+    }
+
+    for (i = src_len; i > 0; i--) {
+        total += ((unsigned short) (src[i-1] - '0')) * power;
+        power *= 10;
+    }
+
+    if (total > 9999) {
+        return MAX_LIMIT_EXCEEDED;
+    }
+
+    *output = total;
+
+    return NO_ERROR;
 }

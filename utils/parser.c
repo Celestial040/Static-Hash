@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "char_manip.h"
 
 
 typedef unsigned char MappingMode;
@@ -99,6 +100,7 @@ Status header_parse(const FileString *filestring, size_t *line_count, MappingMod
 }
 
 Status body_parse_key_value(const FileString *filestring, size_t *line_count) {
+    Status status = NO_ERROR;
     TokenPointer tokenpointer;
     unsigned char *keyword_collections = NULL;
     unsigned short *values_pair = NULL;
@@ -163,21 +165,29 @@ Status body_parse_key_value(const FileString *filestring, size_t *line_count) {
     }
 
     for (i = 0; i < keyword_count; i++) {
-        tokenpointer = lexer_scan(filestring);
 
+        /* keyword */
+        tokenpointer = lexer_scan(filestring);
         for (j = 0; j < tokenpointer.len; j++) {
             keyword_collections[j * 5 + i] = (unsigned char) filestring->start[tokenpointer.start + j];
         }
 
+        /* comma */
         tokenpointer = lexer_scan(filestring);
 
+        /* numeric value*/
         tokenpointer = lexer_scan(filestring);
+        status = string_to_unsigned_short(&filestring->start[tokenpointer.start], tokenpointer.len, &values_pair[i]);
+        if (status != NO_ERROR) {
+            return status;
+        }
 
+        /* endline */
         tokenpointer = lexer_scan(filestring);
 
     }
 
-    for (i = 0; i < 5; i++) {
+/*     for (i = 0; i < 5; i++) {
         for (j = i*5; j < (i+1)*5; j++) {
             if (keyword_collections[j] != 0) {
                 printf("%c ", keyword_collections[j]);
@@ -188,8 +198,11 @@ Status body_parse_key_value(const FileString *filestring, size_t *line_count) {
         }
 
         printf("\n");
-
     }
+
+    for (i = 0; i < 5; i++) {
+        printf("value : %d\n", values_pair[i]);
+    } */
 
 
     return NO_ERROR;
