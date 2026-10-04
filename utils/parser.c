@@ -16,8 +16,6 @@ enum {
     STRUCT_MAPPING
 };
 
-
-
 Status header_parse(const FileString *filestring, size_t *line_count, MappingMode *mapping_mode) {
     TokenPointer tokenpointer;
     const char *expected_headers[3] = {"struct", "key", "value"};
@@ -99,15 +97,18 @@ Status header_parse(const FileString *filestring, size_t *line_count, MappingMod
     return NO_ERROR;
 }
 
+
+
 Status body_parse_key_value(const FileString *filestring, size_t *line_count) {
     Status status = NO_ERROR;
     TokenPointer tokenpointer;
-    unsigned char *keyword_collections = NULL;
+    unsigned char *keyword_column = NULL;
     unsigned short *values_pair = NULL;
     size_t body_start_index = get_lexer_tail();
     unsigned char longest_keyword_len = 0;
     size_t keyword_count = 0;
     size_t i , j;
+    Keyword *keyword_collections = NULL;
 
     while (1) {
         tokenpointer = lexer_scan(filestring);
@@ -152,24 +153,25 @@ Status body_parse_key_value(const FileString *filestring, size_t *line_count) {
 
     set_lexer_index(body_start_index);
 
-    printf("%ld, %d\n", keyword_count, longest_keyword_len);
+    keyword_collections = (Keyword *) malloc(sizeof(Keyword) * keyword_count);
+    if (keyword_collections == NULL) { return ALLOCATION_ERROR; }
 
-    keyword_collections = (unsigned char *) calloc(keyword_count * longest_keyword_len , sizeof(char));
-    if (keyword_collections == NULL) {
-        return ALLOCATION_ERROR;
-    }
+    keyword_column = (unsigned char *) calloc(keyword_count * longest_keyword_len , sizeof(char));
+    if (keyword_column == NULL) { return ALLOCATION_ERROR; }
 
     values_pair = (unsigned short *) malloc(sizeof(unsigned short) * keyword_count);
-    if (values_pair == NULL) {
-        return ALLOCATION_ERROR;
-    }
+    if (values_pair == NULL) { return ALLOCATION_ERROR; }
 
     for (i = 0; i < keyword_count; i++) {
 
         /* keyword */
         tokenpointer = lexer_scan(filestring);
+
+        keyword_collections[i].start = tokenpointer.start;
+        keyword_collections[i].len = tokenpointer.len;
+
         for (j = 0; j < tokenpointer.len; j++) {
-            keyword_collections[j * 5 + i] = (unsigned char) filestring->start[tokenpointer.start + j];
+            keyword_column[j * keyword_count + i] = (unsigned char) filestring->start[tokenpointer.start + j];
         }
 
         /* comma */
@@ -187,11 +189,23 @@ Status body_parse_key_value(const FileString *filestring, size_t *line_count) {
 
     }
 
-/*     for (i = 0; i < 5; i++) {
-        for (j = i*5; j < (i+1)*5; j++) {
-            if (keyword_collections[j] != 0) {
-                printf("%c ", keyword_collections[j]);
+    /* Important note here
+       I will add pure copy paste for non int value pairs in the future
+       but to simply for now, im gonna use easy simple way of num as value
+    */
+
+    /* for (i = 0; i < keyword_count; i++) {
+        printf("%.*s \n", (unsigned int) keyword_collections[i].len, filestring->start + keyword_collections[i].start);
+    } */
+
+    /* for (i = 0; i < keyword_count; i++) {
+
+        for (j = i * keyword_count; j < (i + 1) * keyword_count; j++) {
+
+            if (keyword_column[j] != 0) {
+                printf("%c ", keyword_column[j]);
             }
+
             else {
                 printf("  ");
             }
@@ -200,9 +214,11 @@ Status body_parse_key_value(const FileString *filestring, size_t *line_count) {
         printf("\n");
     }
 
-    for (i = 0; i < 5; i++) {
+    for (i = 0; i < keyword_count; i++) {
         printf("value : %d\n", values_pair[i]);
     } */
+
+
 
 
     return NO_ERROR;
