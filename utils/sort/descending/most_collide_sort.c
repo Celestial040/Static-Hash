@@ -3,26 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "parser.h"
-
-
-unsigned short median_of_three(unsigned short a, unsigned short b, unsigned short c) {
-    if ((c > a && a > b) || (b > a && a > c)) {
-        return a;
-    }
-    if ((a > b && b > c) || (c > b && b > a)) {
-        return b;
-    }
-    if ((a > c && c > b) || (b > c && c > a)) {
-        return c;
-    }
-    if ((a < b && b == c) || (a > b && b == c)) {
-        return b;
-    }
-    if ((a < b && a == c) || (a > b && a == c)) {
-        return a;
-    }
-    return b;
-}
+#include "sort/median.h"
 
 void swap_sort_base_on_weight(unsigned short *weight, Keyword *keyword, unsigned short *values_pair, size_t index_1, size_t index_2) {
     Keyword temp_keyword = {0,0};
@@ -43,7 +24,7 @@ void swap_sort_base_on_weight(unsigned short *weight, Keyword *keyword, unsigned
 
 }
 
-void internal_quicksort(unsigned short *weight, Keyword *keyword, unsigned short *values_pair, size_t low, size_t high, unsigned short pivot) {
+void most_collide_internal_quicksort(unsigned short *weight, Keyword *keyword, unsigned short *values_pair, size_t low, size_t high, unsigned short pivot) {
     size_t i = low;
     size_t j = high;
     unsigned short next_pivot = 0;
@@ -80,12 +61,12 @@ void internal_quicksort(unsigned short *weight, Keyword *keyword, unsigned short
     }
 
     next_pivot = median_of_three(weight[low], weight[(low + j) / 2], weight[j]);
-    internal_quicksort(weight, keyword, values_pair, low, j, next_pivot);
+    most_collide_internal_quicksort(weight, keyword, values_pair, low, j, next_pivot);
     next_pivot = median_of_three(weight[i], weight[(i + high) / 2], weight[high]);
-    internal_quicksort(weight, keyword, values_pair, i, high, next_pivot);
+    most_collide_internal_quicksort(weight, keyword, values_pair, i, high, next_pivot);
 }
 
-Status weight_based_quicksort(const FileString *filestring, KeywordData *keyword_data, unsigned short *weight) {
+Status most_collide_keyword_sort(const FileString *filestring, KeywordData *keyword_data, unsigned short *weight) {
     Keyword *temp_keyword = NULL;
     unsigned char *temp_keyword_column = NULL;
     unsigned short *temp_values_pair = NULL;
@@ -93,7 +74,7 @@ Status weight_based_quicksort(const FileString *filestring, KeywordData *keyword
     unsigned short pivot = 0;
     size_t i, j = 0;
 
-    temp_keyword = (Keyword *) malloc(sizeof(Keyword) * keyword_data->keyword_count * keyword_data->longest_keyword_len);
+    temp_keyword = (Keyword *) malloc(sizeof(Keyword) * keyword_data->keyword_count);
     if (temp_keyword == NULL) {
         return ALLOCATION_ERROR;
     }
@@ -118,7 +99,7 @@ Status weight_based_quicksort(const FileString *filestring, KeywordData *keyword
     memcpy(temp_weight, weight, sizeof(unsigned short) * keyword_data->keyword_count);
 
     pivot = median_of_three(temp_weight[0], temp_weight[(keyword_data->keyword_count-1) / 2], temp_weight[keyword_data->keyword_count-1]);
-    internal_quicksort(temp_weight, temp_keyword, temp_values_pair, 0, keyword_data->keyword_count-1, pivot);
+    most_collide_internal_quicksort(temp_weight, temp_keyword, temp_values_pair, 0, keyword_data->keyword_count-1, pivot);
 
     for (i = 0; i < keyword_data->keyword_count; i++) {
         for (j = 0; j < temp_keyword[i].len; j++) {

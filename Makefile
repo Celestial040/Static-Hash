@@ -4,7 +4,9 @@ SRCS := main.c \
         utils/lexer.c \
         utils/parser.c \
         utils/status.c \
-        utils/sort.c
+        utils/sort/median.c\
+        utils/sort/descending/most_collide_sort.c\
+        utils/sort/descending/significant_column_sort.c
 
 HEADERS := $(wildcard include/*.h include/*/*.h)
 INC_FLAGS := -Iinclude

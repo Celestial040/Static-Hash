@@ -1,6 +1,6 @@
 {key},{value}
-low  , 0
+world  , 0
 wow  , 1
-slow , 2
-plow , 3
-cow  , 4
+war , 2
+want , 3
+way  , 4

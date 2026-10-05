@@ -7,7 +7,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include "char_manip.h"
-#include "sort.h"
+#include "sort/descending/most_collide_sort.h"
+#include "sort/descending/significant_column_sort.h"
 
 typedef unsigned char MappingMode;
 enum {
@@ -251,14 +252,73 @@ Status sort_keywords(const FileString *filestring, KeywordData *data) {
         }
     }
 
-    status = weight_based_quicksort(filestring, data, keyword_score);
+    status = most_collide_keyword_sort(filestring, data, keyword_score);
     if (status != NO_ERROR) {
         return status;
     }
 
-    for (i = 0; i < data->keyword_count; i++) {
-        printf("%c\n", data->keyword_column[i]);
+    return NO_ERROR;
+}
+
+Status finding_hash(KeywordData *data) {
+    Status status = NO_ERROR;
+    unsigned char lowercase[26] = {0};
+    unsigned char uppercase[26] = {0};
+    unsigned char *column_uniqueness_score = NULL;
+    unsigned char *column_index = NULL;
+    size_t i, j = 0;
+
+    column_uniqueness_score = (unsigned char *) calloc(data->longest_keyword_len,sizeof(unsigned char));
+    if (column_uniqueness_score == NULL) {
+        return ALLOCATION_ERROR;
     }
+
+    column_index = (unsigned char *) malloc(sizeof(unsigned char) * data->longest_keyword_len);
+    if (column_index == NULL) {
+        return ALLOCATION_ERROR;
+    }
+
+    for (i = 0; i < data->longest_keyword_len; i++) {
+        column_index[i] = (unsigned char) i;
+    }
+
+    for (i = 0; i < data->longest_keyword_len; i++) {
+        for (j = i*data->keyword_count; j < (i+1)*data->keyword_count; j++) {
+
+            if (data->keyword_column[j] == 0) {
+                continue;
+            }
+
+            if (is_lowercase_alphabet((char)data->keyword_column[j])) {
+                if (lowercase[data->keyword_column[j] - 'a'] == 0) {
+                    lowercase[data->keyword_column[j] - 'a'] = 1;
+                }
+
+            } else {
+                if (uppercase[data->keyword_column[j] - 'A'] == 0) {
+                    uppercase[data->keyword_column[j] - 'A'] = 1;
+                }
+            }
+        }
+
+        for (j = 0; j < 26; j++) {
+            column_uniqueness_score[i] += lowercase[j];
+            column_uniqueness_score[i] += uppercase[j];
+
+            lowercase[j] = 0;
+            uppercase[j] = 0;
+        }
+    }
+
+    status = significant_column_sort(&column_uniqueness_score, &column_index, data->longest_keyword_len);
+    if (status != NO_ERROR) {
+        return status;
+    }
+
+    for (i = 0; i < data->longest_keyword_len; i++) {
+        printf("%d , %d \n", column_index[i], column_uniqueness_score[i]);
+    }
+
 
     return NO_ERROR;
 }
@@ -267,7 +327,7 @@ Status parser_start(const FileString *filestring) {
     size_t line_count = 0;
     MappingMode mapping_mode = KEY_ENUMERATION;
     Status status = NO_ERROR;
-    KeywordData parse_result = {NULL,NULL,NULL,0,0};
+    KeywordData keyword_data = {NULL,NULL,NULL,0,0};
 
     status = header_parse(filestring, &line_count, &mapping_mode);
     if (status != NO_ERROR) {return status;}
@@ -275,7 +335,7 @@ Status parser_start(const FileString *filestring) {
 
     switch (mapping_mode) {
         case KEY_VALUE_PAIR:
-            status = body_parse_key_value(filestring, &line_count, &parse_result);
+            status = body_parse_key_value(filestring, &line_count, &keyword_data);
             if (status != NO_ERROR) {return status;}
             break;
 
@@ -283,7 +343,10 @@ Status parser_start(const FileString *filestring) {
             break;
     }
 
-    sort_keywords(filestring,&parse_result);
+    status = sort_keywords(filestring,&keyword_data);
+    if (status != NO_ERROR) {return status;}
+    status = finding_hash(&keyword_data);
+    if (status != NO_ERROR) {return status;}
 
     return status;
 }
