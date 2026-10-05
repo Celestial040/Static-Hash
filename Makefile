@@ -3,7 +3,8 @@ SRCS := main.c \
         utils/char_manip.c \
         utils/lexer.c \
         utils/parser.c \
-        utils/status.c
+        utils/status.c \
+        utils/sort.c
 
 HEADERS := $(wildcard include/*.h include/*/*.h)
 INC_FLAGS := -Iinclude

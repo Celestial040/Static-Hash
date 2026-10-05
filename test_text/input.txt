@@ -1,7 +1,6 @@
 {key},{value}
-hello , 0
-world , 1
-okay  , 2
-no    , 3
-yes   , 4
-kwak  , 5
+low  , 0
+wow  , 1
+slow , 2
+plow , 3
+cow  , 4

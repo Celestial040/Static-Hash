@@ -7,7 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "char_manip.h"
-
+#include "sort.h"
 
 typedef unsigned char MappingMode;
 enum {
@@ -97,18 +97,20 @@ Status header_parse(const FileString *filestring, size_t *line_count, MappingMod
     return NO_ERROR;
 }
 
-
-
-Status body_parse_key_value(const FileString *filestring, size_t *line_count) {
-    Status status = NO_ERROR;
+Status body_parse_key_value(const FileString *filestring, size_t *line_count, KeywordData *result_output) {
     TokenPointer tokenpointer;
+    Keyword *keywords = NULL;
     unsigned char *keyword_column = NULL;
     unsigned short *values_pair = NULL;
+
     size_t body_start_index = get_lexer_tail();
-    unsigned char longest_keyword_len = 0;
+    size_t i , j = 0;
+
+    Status status = NO_ERROR;
+
     size_t keyword_count = 0;
-    size_t i , j;
-    Keyword *keyword_collections = NULL;
+    unsigned char longest_keyword_len = 0;
+
 
     while (1) {
         tokenpointer = lexer_scan(filestring);
@@ -151,24 +153,30 @@ Status body_parse_key_value(const FileString *filestring, size_t *line_count) {
         keyword_count++;
     }
 
-    set_lexer_index(body_start_index);
-
-    keyword_collections = (Keyword *) malloc(sizeof(Keyword) * keyword_count);
-    if (keyword_collections == NULL) { return ALLOCATION_ERROR; }
+    keywords = (Keyword *) malloc(sizeof(Keyword) * keyword_count);
+    if (keywords == NULL) {
+        return ALLOCATION_ERROR;
+    }
 
     keyword_column = (unsigned char *) calloc(keyword_count * longest_keyword_len , sizeof(char));
-    if (keyword_column == NULL) { return ALLOCATION_ERROR; }
+    if (keyword_column == NULL) {
+        return ALLOCATION_ERROR;
+    }
 
     values_pair = (unsigned short *) malloc(sizeof(unsigned short) * keyword_count);
-    if (values_pair == NULL) { return ALLOCATION_ERROR; }
+    if (values_pair == NULL ) {
+        return ALLOCATION_ERROR;
+    }
+
+    set_lexer_index(body_start_index);
 
     for (i = 0; i < keyword_count; i++) {
 
         /* keyword */
         tokenpointer = lexer_scan(filestring);
 
-        keyword_collections[i].start = tokenpointer.start;
-        keyword_collections[i].len = tokenpointer.len;
+        keywords[i].start = tokenpointer.start;
+        keywords[i].len = tokenpointer.len;
 
         for (j = 0; j < tokenpointer.len; j++) {
             keyword_column[j * keyword_count + i] = (unsigned char) filestring->start[tokenpointer.start + j];
@@ -189,37 +197,68 @@ Status body_parse_key_value(const FileString *filestring, size_t *line_count) {
 
     }
 
-    /* Important note here
-       I will add pure copy paste for non int value pairs in the future
-       but to simply for now, im gonna use easy simple way of num as value
-    */
+    result_output->keywords = keywords;
+    result_output->keyword_column = keyword_column;
+    result_output->values_pair = values_pair;
+    result_output->keyword_count = keyword_count;
+    result_output->longest_keyword_len = longest_keyword_len;
 
-    /* for (i = 0; i < keyword_count; i++) {
-        printf("%.*s \n", (unsigned int) keyword_collections[i].len, filestring->start + keyword_collections[i].start);
-    } */
+    return NO_ERROR;
+}
 
-    /* for (i = 0; i < keyword_count; i++) {
+Status sort_keywords(const FileString *filestring, KeywordData *data) {
+    Status status = NO_ERROR;
+    unsigned short lowercase[26] = {0};
+    unsigned short uppercase[26] = {0};
+    unsigned short *keyword_score = NULL;
+    size_t i,j = 0;
 
-        for (j = i * keyword_count; j < (i + 1) * keyword_count; j++) {
 
-            if (keyword_column[j] != 0) {
-                printf("%c ", keyword_column[j]);
+    keyword_score = (unsigned short *) calloc(data->keyword_count,sizeof(unsigned short));
+    if (keyword_score == NULL) {
+        return ALLOCATION_ERROR;
+    }
+
+    for (i = 0; i < data->longest_keyword_len; i++) {
+        for (j = i*data->keyword_count; j < (i+1)*data->keyword_count; j++) {
+
+            if (data->keyword_column[j] == 0) {
+                continue;
             }
 
-            else {
-                printf("  ");
+            if (data->keyword_column[j] >= 'a') {
+                lowercase[data->keyword_column[j] - 'a'] += 1;
+            } else {
+                uppercase[data->keyword_column[j] - 'A'] += 1;
             }
         }
 
-        printf("\n");
+        for (j = 0; j < data->keyword_count; j++) {
+            if (data->keyword_column[j] == 0) {
+                continue;
+            }
+
+            if (data->keyword_column[j] >= 'a') {
+                keyword_score[j] += lowercase[data->keyword_column[j] - 'a'];
+            } else {
+                keyword_score[j] += uppercase[data->keyword_column[j] - 'A'];
+            }
+        }
+
+        for (j = 0; j < 26; j++) {
+            lowercase[j] = 0;
+            uppercase[j] = 0;
+        }
     }
 
-    for (i = 0; i < keyword_count; i++) {
-        printf("value : %d\n", values_pair[i]);
-    } */
+    status = weight_based_quicksort(filestring, data, keyword_score);
+    if (status != NO_ERROR) {
+        return status;
+    }
 
-
-
+    for (i = 0; i < data->keyword_count; i++) {
+        printf("%c\n", data->keyword_column[i]);
+    }
 
     return NO_ERROR;
 }
@@ -228,6 +267,7 @@ Status parser_start(const FileString *filestring) {
     size_t line_count = 0;
     MappingMode mapping_mode = KEY_ENUMERATION;
     Status status = NO_ERROR;
+    KeywordData parse_result = {NULL,NULL,NULL,0,0};
 
     status = header_parse(filestring, &line_count, &mapping_mode);
     if (status != NO_ERROR) {return status;}
@@ -235,13 +275,15 @@ Status parser_start(const FileString *filestring) {
 
     switch (mapping_mode) {
         case KEY_VALUE_PAIR:
-            status = body_parse_key_value(filestring, &line_count);
+            status = body_parse_key_value(filestring, &line_count, &parse_result);
             if (status != NO_ERROR) {return status;}
             break;
 
         default:
             break;
     }
+
+    sort_keywords(filestring,&parse_result);
 
     return status;
 }
