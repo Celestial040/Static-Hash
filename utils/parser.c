@@ -7,15 +7,16 @@
 #include <stdlib.h>
 #include <string.h>
 #include "char_manip.h"
-#include "sort/descending/most_collide_sort.h"
-#include "sort/descending/significant_column_sort.h"
+#include "sort/descending/most_collide.h"
+#include "sort/descending/significant_column.h"
+#include "vector/landing_spot.h"
 
 typedef unsigned char MappingMode;
 enum {
     KEY_ENUMERATION,
-    KEY_VALUE_PAIR,
-    STRUCT_MAPPING
+    KEY_VALUE_PAIR
 };
+
 
 Status header_parse(const FileString *filestring, size_t *line_count, MappingMode *mapping_mode) {
     TokenPointer tokenpointer;
@@ -260,7 +261,7 @@ Status sort_keywords(const FileString *filestring, KeywordData *data) {
     return NO_ERROR;
 }
 
-Status finding_hash(KeywordData *data) {
+Status finding_most_significant_column(KeywordData *data, unsigned char **significant_column_order) {
     Status status = NO_ERROR;
     unsigned char lowercase[26] = {0};
     unsigned char uppercase[26] = {0};
@@ -315,10 +316,79 @@ Status finding_hash(KeywordData *data) {
         return status;
     }
 
-    for (i = 0; i < data->longest_keyword_len; i++) {
-        printf("%d , %d \n", column_index[i], column_uniqueness_score[i]);
+    free(column_uniqueness_score);
+
+    *significant_column_order = column_index;
+
+    return NO_ERROR;
+}
+
+Status calculating_static_hash(const KeywordData *data, const unsigned char *significant_column_order) {
+    Status allocation_status = NO_ERROR;
+    unsigned short *scoreboard = NULL;
+    unsigned short *score_lookup = NULL;
+    unsigned short *scoreboard_total = NULL;
+    size_t target_index = 0;
+    size_t highest_slot_index = 0;
+    unsigned char selected_char = 0;
+    LandingSpotVector landing_spot;
+    size_t i,j,k = 0;
+
+    scoreboard = (unsigned short *) calloc(data->keyword_count * data->longest_keyword_len, sizeof(unsigned short));
+    if (scoreboard == NULL) {
+        return ALLOCATION_ERROR;
     }
 
+    score_lookup = (unsigned short *) calloc(26 * 2 * data->longest_keyword_len, sizeof(unsigned short));
+    if (score_lookup == NULL) {
+        return ALLOCATION_ERROR;
+    }
+
+    scoreboard_total = (unsigned short *) calloc(data->keyword_count, sizeof(unsigned short));
+    if (scoreboard_total == NULL) {
+        return ALLOCATION_ERROR;
+    }
+
+    allocation_status = allocate_landing_spot_vector(&landing_spot, 1024*5);
+    if (allocation_status != NO_ERROR) {
+        return allocation_status;
+    }
+
+    for (i = 0; i < 1024*5; i++) {
+        landing_spot.array[i] = 0;
+    }
+
+    for (i = 0; i < data->longest_keyword_len; i++) {
+        for (j = 0; j < data->keyword_count; j++) {
+            target_index = significant_column_order[0] * data->keyword_count + j;
+            selected_char = data->keyword_column[target_index];
+
+            if (is_lowercase_alphabet((char)selected_char)) {
+                scoreboard[j * data->keyword_count + significant_column_order[0]] += score_lookup[data->keyword_column[target_index] - 'a'];
+            } else {
+                scoreboard[j * data->keyword_count + significant_column_order[0]] += score_lookup[data->keyword_column[target_index] - 'A'];
+            }
+        }
+
+        for (j = 0; j < data->keyword_count; j++) {
+            for (k = 0; k < data->longest_keyword_len; k++) {
+                scoreboard_total[j] += scoreboard[j * data->keyword_count + k];
+            }
+
+            scoreboard_total[j] += data->keywords[j].len;
+            if (landing_spot.capacity < scoreboard_total[j]) {
+                reallocate_landing_spot_vector(&landing_spot, landing_spot.capacity*10);
+            }
+
+            if (landing_spot.array[scoreboard_total[j]] == 0) {
+                landing_spot.array[scoreboard_total[j]] = 1;
+            } else {
+
+            }
+        }
+
+        break;
+    }
 
     return NO_ERROR;
 }
@@ -328,6 +398,7 @@ Status parser_start(const FileString *filestring) {
     MappingMode mapping_mode = KEY_ENUMERATION;
     Status status = NO_ERROR;
     KeywordData keyword_data = {NULL,NULL,NULL,0,0};
+    unsigned char *significant_column_order = NULL;
 
     status = header_parse(filestring, &line_count, &mapping_mode);
     if (status != NO_ERROR) {return status;}
@@ -345,7 +416,9 @@ Status parser_start(const FileString *filestring) {
 
     status = sort_keywords(filestring,&keyword_data);
     if (status != NO_ERROR) {return status;}
-    status = finding_hash(&keyword_data);
+    status = finding_most_significant_column(&keyword_data,&significant_column_order);
+    if (status != NO_ERROR) {return status;}
+    status = calculating_static_hash(&keyword_data,significant_column_order);
     if (status != NO_ERROR) {return status;}
 
     return status;
