@@ -4,7 +4,7 @@
 #include <string.h>
 #include "status.h"
 #include "sort/median.h"
-
+#include "sort/descending/most_unique_column.h"
 
 
 void swap_sort_base_on_column_uniqueness(unsigned char *column_uniqueness, unsigned char *column_index, size_t index_1, size_t index_2) {
@@ -63,32 +63,27 @@ void column_uniqueness_internal_quicksort(unsigned char *column_uniqueness, unsi
     column_uniqueness_internal_quicksort(column_uniqueness, column_index, i, high, next_pivot);
 }
 
-Status significant_column_sort(unsigned char **column_uniqueness, unsigned char **column_index , size_t array_len) {
-    unsigned char *temp_column_uniqueness = NULL;
-    unsigned char *temp_column_index = NULL;
+Status most_unique_column_sort(KeywordData *keyword_data, unsigned char *column_uniqueness, unsigned char *column_index) {
+    size_t i, j = 0;
     unsigned short pivot = 0;
+    char *temp_keyword_column = NULL;
 
-    temp_column_uniqueness = (unsigned char *) malloc(sizeof(unsigned char) * array_len);
-    if (temp_column_uniqueness == NULL) {
+    temp_keyword_column = (char *) malloc(sizeof(char) * keyword_data->longest_keyword_len * keyword_data->keyword_count);
+    if (temp_keyword_column == NULL) {
         return ALLOCATION_ERROR;
     }
 
-    temp_column_index = (unsigned char *) malloc(sizeof(unsigned char) * array_len);
-    if (temp_column_index == NULL) {
-        return ALLOCATION_ERROR;
+    pivot = median_of_three(column_uniqueness[0], column_uniqueness[(keyword_data->keyword_count-1) / 2], column_uniqueness[keyword_data->keyword_count-1]);
+    column_uniqueness_internal_quicksort(column_uniqueness, column_index, 0, keyword_data->keyword_count-1, pivot);
+
+    for (i = 0; i < keyword_data->longest_keyword_len; i++) {
+        for (j = 0; j < keyword_data->keyword_count; j++) {
+            temp_keyword_column[i * keyword_data->longest_keyword_len + j] = keyword_data->keyword_column[column_index[i] * keyword_data->longest_keyword_len + j] ;
+        }
     }
 
-    memcpy(temp_column_uniqueness, *column_uniqueness, sizeof(unsigned char) * array_len);
-    memcpy(temp_column_index, *column_index, sizeof(unsigned char) * array_len);
-
-    pivot = median_of_three(temp_column_uniqueness[0], temp_column_uniqueness[(array_len-1) / 2], temp_column_uniqueness[array_len-1]);
-    column_uniqueness_internal_quicksort( temp_column_uniqueness, temp_column_index, 0, array_len-1, pivot);
-
-    free(*column_index);
-    *column_index = temp_column_index;
-
-    free(*column_uniqueness);
-    *column_uniqueness = temp_column_uniqueness;
+    free(keyword_data->keyword_column);
+    keyword_data->keyword_column = temp_keyword_column;
 
     return NO_ERROR;
 }

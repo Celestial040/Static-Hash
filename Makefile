@@ -4,10 +4,10 @@ SRCS := main.c \
         utils/lexer.c \
         utils/parser.c \
         utils/status.c \
-        # utils/vector/landing_spot.c\
-        # utils/sort/median.c\
-        # utils/sort/descending/most_collide.c\
-        # utils/sort/descending/significant_column.c
+        utils/vector/landing_spot.c\
+        utils/sort/median.c\
+        utils/sort/descending/most_collide.c\
+        utils/sort/descending/most_unique_column.c
 
 HEADERS := $(wildcard include/*.h include/*/*.h)
 INC_FLAGS := -Iinclude

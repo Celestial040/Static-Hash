@@ -1,7 +1,5 @@
 #ifndef STATUS_H
 #define STATUS_H
-
-
 typedef unsigned char Status;
 
 enum {

@@ -7,9 +7,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include "char_manip.h"
-/* #include "sort/descending/most_collide.h"
-#include "sort/descending/significant_column.h"
-#include "vector/landing_spot.h" */
+#include "sort/descending/most_collide.h"
+#include "sort/descending/most_unique_column.h"
+/* #include "vector/landing_spot.h"  */
 
 typedef unsigned char MappingMode;
 enum {
@@ -23,7 +23,7 @@ void print_keyword_data(KeywordData *data) {
     for (i = 0; i < data->keyword_count; i++) {
 
         for (j = 0; j < data->longest_keyword_len; j++) {
-            if (data->keywords[j] == 0) {
+            if (data->keywords[i * data->keyword_count + j] == 0) {
                 break;
             }
             printf("%c ",data->keywords[i * data->keyword_count + j]);
@@ -36,9 +36,10 @@ void print_keyword_data(KeywordData *data) {
     for (i = 0; i < data->longest_keyword_len; i++) {
 
         for (j = 0; j < data->keyword_count; j++) {
-/*             if (data->keyword_column[j] == 0) {
+            if (data->keyword_column[i * data->longest_keyword_len + j] == 0) {
+                printf("  ");
                 continue;
-            } */
+            }
             printf("%c ",data->keyword_column[i * data->longest_keyword_len + j]);
         }
         printf("\n");
@@ -232,7 +233,7 @@ Status body_parse_key_value(const FileString *filestring, size_t *line_count, Ke
 }
 
 Status sort_keywords(KeywordData *data) {
-    /* Status status = NO_ERROR; */
+    Status status = NO_ERROR;
 
     unsigned char lowercase[26] = {0};
     unsigned char uppercase[26] = {0};
@@ -283,15 +284,18 @@ Status sort_keywords(KeywordData *data) {
         }
     }
 
-/*     status = most_collide_keyword_sort(filestring, data, keyword_score);
+    status = most_collide_keyword_sort(data, keyword_score);
     if (status != NO_ERROR) {
+        free(keyword_score);
         return status;
-    } */
+    }
+
+    free(keyword_score);
 
     return NO_ERROR;
 }
 
-/* Status finding_most_significant_column(KeywordData *data, unsigned char **significant_column_order) {
+Status finding_most_significant_column(KeywordData *data) {
     Status status = NO_ERROR;
     unsigned char lowercase[26] = {0};
     unsigned char uppercase[26] = {0};
@@ -320,7 +324,7 @@ Status sort_keywords(KeywordData *data) {
                 continue;
             }
 
-            if (is_lowercase_alphabet((char)data->keyword_column[j])) {
+            if (is_lowercase_alphabet(data->keyword_column[j])) {
                 if (lowercase[data->keyword_column[j] - 'a'] == 0) {
                     lowercase[data->keyword_column[j] - 'a'] = 1;
                 }
@@ -341,17 +345,16 @@ Status sort_keywords(KeywordData *data) {
         }
     }
 
-    status = significant_column_sort(&column_uniqueness_score, &column_index, data->longest_keyword_len);
+    status = most_unique_column_sort(data, column_uniqueness_score, column_index );
     if (status != NO_ERROR) {
         return status;
     }
 
     free(column_uniqueness_score);
-
-    *significant_column_order = column_index;
+    free(column_index);
 
     return NO_ERROR;
-} */
+}
 
 /* Status calculating_static_hash(const KeywordData *data, const unsigned char *significant_column_order) {
     Status allocation_status = NO_ERROR;
@@ -442,8 +445,7 @@ Status parser_start(const FileString *filestring) {
     MappingMode mapping_mode = KEY_ENUMERATION;
     size_t line_count = 0;
 
-    KeywordData keyword_data = {NULL,NULL,NULL,0,0};
-/*     unsigned char *significant_column_order = NULL; */
+    KeywordData keyword_data = {NULL,NULL,NULL,NULL,0,0};
 
     status = header_parse(filestring, &line_count, &mapping_mode);
     if (status != NO_ERROR) {return status;}
@@ -460,8 +462,12 @@ Status parser_start(const FileString *filestring) {
     status = sort_keywords(&keyword_data);
     if (status != NO_ERROR) {return status;}
 
-/*     status = finding_most_significant_column(&keyword_data,&significant_column_order);
-    if (status != NO_ERROR) {return status;} */
+    print_keyword_data(&keyword_data);
+
+    status = finding_most_significant_column(&keyword_data);
+    if (status != NO_ERROR) {return status;}
+
+    print_keyword_data(&keyword_data);
 
 /*     status = calculating_static_hash(&keyword_data,significant_column_order);
     if (status != NO_ERROR) {return status;} */

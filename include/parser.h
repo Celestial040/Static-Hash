@@ -8,6 +8,7 @@
 typedef struct KeywordData {
     char *keywords;
     char *keyword_column;
+    unsigned char *significant_column_order;
     unsigned short *values_pair;
     unsigned char keyword_count;
     unsigned char longest_keyword_len;
