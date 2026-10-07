@@ -7,9 +7,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include "char_manip.h"
-#include "sort/descending/most_collide.h"
+/* #include "sort/descending/most_collide.h"
 #include "sort/descending/significant_column.h"
-#include "vector/landing_spot.h"
+#include "vector/landing_spot.h" */
 
 typedef unsigned char MappingMode;
 enum {
@@ -17,11 +17,38 @@ enum {
     KEY_VALUE_PAIR
 };
 
+void print_keyword_data(KeywordData *data) {
+    size_t i, j = 0;
+
+    for (i = 0; i < data->keyword_count; i++) {
+
+        for (j = 0; j < data->longest_keyword_len; j++) {
+            if (data->keywords[j] == 0) {
+                break;
+            }
+            printf("%c ",data->keywords[i * data->keyword_count + j]);
+        }
+        printf("\n");
+    }
+
+    printf("\n");
+
+    for (i = 0; i < data->longest_keyword_len; i++) {
+
+        for (j = 0; j < data->keyword_count; j++) {
+/*             if (data->keyword_column[j] == 0) {
+                continue;
+            } */
+            printf("%c ",data->keyword_column[i * data->longest_keyword_len + j]);
+        }
+        printf("\n");
+    }
+
+    printf("\n");
+}
 
 Status header_parse(const FileString *filestring, size_t *line_count, MappingMode *mapping_mode) {
     TokenPointer tokenpointer;
-    const char *expected_headers[3] = {"struct", "key", "value"};
-    unsigned char headers_loop = 0;
 
     tokenpointer = lexer_scan(filestring);
 
@@ -35,16 +62,13 @@ Status header_parse(const FileString *filestring, size_t *line_count, MappingMod
         return MISMATCH_EXPECTATION;
     }
 
-    for (; headers_loop < 2; headers_loop++) {
-        if (strncmp(filestring->start + tokenpointer.start, expected_headers[headers_loop], tokenpointer.len) == 0) {
-            break;
-        }
-    }
-
-    if (headers_loop == 2) {
+    if (strncmp(filestring->start + tokenpointer.start, "enum", tokenpointer.len) == 0) {
+        *mapping_mode = KEY_ENUMERATION;
+    } else if (strncmp(filestring->start + tokenpointer.start, "key", tokenpointer.len) == 0) {
+        *mapping_mode = KEY_VALUE_PAIR;
+    } else {
         return MISMATCH_EXPECTATION;
     }
-
 
     tokenpointer = lexer_scan(filestring);
 
@@ -54,16 +78,17 @@ Status header_parse(const FileString *filestring, size_t *line_count, MappingMod
 
     tokenpointer = lexer_scan(filestring);
 
+    if (mapping_mode == KEY_ENUMERATION) {
+        if (tokenpointer.token != TOKEN_ENDLINE) {
+            return MISMATCH_EXPECTATION;
+        }
 
-    if (tokenpointer.token != TOKEN_COMMA && tokenpointer.token != TOKEN_ENDLINE) {
-        return MISMATCH_EXPECTATION;
+        *line_count += 1;
+        return NO_ERROR;
     }
 
-    if (headers_loop == 1 && tokenpointer.token == TOKEN_COMMA) {
-        *mapping_mode = KEY_VALUE_PAIR;
-    } else {
-        *mapping_mode = KEY_ENUMERATION;
-        return NO_ERROR;
+    if (tokenpointer.token != TOKEN_COMMA) {
+        return MISMATCH_EXPECTATION;
     }
 
     tokenpointer = lexer_scan(filestring);
@@ -78,7 +103,7 @@ Status header_parse(const FileString *filestring, size_t *line_count, MappingMod
         return MISMATCH_EXPECTATION;
     }
 
-    if (strncmp(filestring->start + tokenpointer.start, expected_headers[2], tokenpointer.len) != 0) {
+    if (strncmp(filestring->start + tokenpointer.start, "value", tokenpointer.len) != 0) {
         return MISMATCH_EXPECTATION;
     }
 
@@ -100,30 +125,35 @@ Status header_parse(const FileString *filestring, size_t *line_count, MappingMod
 }
 
 Status body_parse_key_value(const FileString *filestring, size_t *line_count, KeywordData *result_output) {
+    Status converting_string_status = NO_ERROR;
+
     TokenPointer tokenpointer;
-    Keyword *keywords = NULL;
-    unsigned char *keyword_column = NULL;
+
+    char *keywords = NULL;
+    char *keyword_column = NULL;
     unsigned short *values_pair = NULL;
 
     size_t body_start_index = get_lexer_tail();
     size_t i , j = 0;
 
-    Status status = NO_ERROR;
-
-    size_t keyword_count = 0;
+    unsigned char keyword_count = 0;
     unsigned char longest_keyword_len = 0;
 
 
     while (1) {
         tokenpointer = lexer_scan(filestring);
+
         if (keyword_count > 0 && tokenpointer.token == TOKEN_EOF) {
+            *line_count += 1;
             break;
         }
 
-        *line_count += 1;
-
         if (tokenpointer.token != TOKEN_IDENTIFIER) {
             return MISMATCH_EXPECTATION;
+        }
+
+        if (keyword_count == 255) {
+            return MAX_LIMIT_EXCEEDED;
         }
 
         if (tokenpointer.len > 255) {
@@ -152,15 +182,16 @@ Status body_parse_key_value(const FileString *filestring, size_t *line_count, Ke
             return MISMATCH_EXPECTATION;
         }
 
+        *line_count += 1;
         keyword_count++;
     }
 
-    keywords = (Keyword *) malloc(sizeof(Keyword) * keyword_count);
+    keywords = (char *) calloc(keyword_count * longest_keyword_len , sizeof(char));
     if (keywords == NULL) {
         return ALLOCATION_ERROR;
     }
 
-    keyword_column = (unsigned char *) calloc(keyword_count * longest_keyword_len , sizeof(char));
+    keyword_column = (char *) calloc(keyword_count * longest_keyword_len , sizeof(char));
     if (keyword_column == NULL) {
         return ALLOCATION_ERROR;
     }
@@ -173,30 +204,22 @@ Status body_parse_key_value(const FileString *filestring, size_t *line_count, Ke
     set_lexer_index(body_start_index);
 
     for (i = 0; i < keyword_count; i++) {
-
-        /* keyword */
         tokenpointer = lexer_scan(filestring);
-
-        keywords[i].start = tokenpointer.start;
-        keywords[i].len = tokenpointer.len;
 
         for (j = 0; j < tokenpointer.len; j++) {
-            keyword_column[j * keyword_count + i] = (unsigned char) filestring->start[tokenpointer.start + j];
+            keywords[i * keyword_count + j] =  filestring->start[tokenpointer.start + j];
+            keyword_column[j * keyword_count + i] = filestring->start[tokenpointer.start + j];
         }
 
-        /* comma */
+        tokenpointer = lexer_scan(filestring);
         tokenpointer = lexer_scan(filestring);
 
-        /* numeric value*/
-        tokenpointer = lexer_scan(filestring);
-        status = string_to_unsigned_short(&filestring->start[tokenpointer.start], tokenpointer.len, &values_pair[i]);
-        if (status != NO_ERROR) {
-            return status;
+        converting_string_status = string_to_unsigned_short(&filestring->start[tokenpointer.start], tokenpointer.len, &values_pair[i]);
+        if (converting_string_status != NO_ERROR) {
+            return converting_string_status;
         }
 
-        /* endline */
         tokenpointer = lexer_scan(filestring);
-
     }
 
     result_output->keywords = keywords;
@@ -208,13 +231,17 @@ Status body_parse_key_value(const FileString *filestring, size_t *line_count, Ke
     return NO_ERROR;
 }
 
-Status sort_keywords(const FileString *filestring, KeywordData *data) {
-    Status status = NO_ERROR;
-    unsigned short lowercase[26] = {0};
-    unsigned short uppercase[26] = {0};
+Status sort_keywords(KeywordData *data) {
+    /* Status status = NO_ERROR; */
+
+    unsigned char lowercase[26] = {0};
+    unsigned char uppercase[26] = {0};
+
+    size_t target_index = 0;
+    char selected_char = 0;
+
     unsigned short *keyword_score = NULL;
     size_t i,j = 0;
-
 
     keyword_score = (unsigned short *) calloc(data->keyword_count,sizeof(unsigned short));
     if (keyword_score == NULL) {
@@ -222,25 +249,28 @@ Status sort_keywords(const FileString *filestring, KeywordData *data) {
     }
 
     for (i = 0; i < data->longest_keyword_len; i++) {
-        for (j = i*data->keyword_count; j < (i+1)*data->keyword_count; j++) {
+        for (j = 0; j < data->keyword_count; j++) {
 
-            if (data->keyword_column[j] == 0) {
+            target_index = i * data->longest_keyword_len + j;
+            selected_char = data->keyword_column[target_index];
+
+            if (selected_char == 0) {
                 continue;
             }
 
-            if (data->keyword_column[j] >= 'a') {
-                lowercase[data->keyword_column[j] - 'a'] += 1;
+            if (is_lowercase_alphabet(selected_char)) {
+                lowercase[selected_char - 'a'] += 1;
             } else {
-                uppercase[data->keyword_column[j] - 'A'] += 1;
+                uppercase[selected_char - 'A'] += 1;
             }
         }
 
         for (j = 0; j < data->keyword_count; j++) {
+
             if (data->keyword_column[j] == 0) {
                 continue;
             }
-
-            if (data->keyword_column[j] >= 'a') {
+            if (is_lowercase_alphabet(data->keyword_column[j])) {
                 keyword_score[j] += lowercase[data->keyword_column[j] - 'a'];
             } else {
                 keyword_score[j] += uppercase[data->keyword_column[j] - 'A'];
@@ -253,15 +283,15 @@ Status sort_keywords(const FileString *filestring, KeywordData *data) {
         }
     }
 
-    status = most_collide_keyword_sort(filestring, data, keyword_score);
+/*     status = most_collide_keyword_sort(filestring, data, keyword_score);
     if (status != NO_ERROR) {
         return status;
-    }
+    } */
 
     return NO_ERROR;
 }
 
-Status finding_most_significant_column(KeywordData *data, unsigned char **significant_column_order) {
+/* Status finding_most_significant_column(KeywordData *data, unsigned char **significant_column_order) {
     Status status = NO_ERROR;
     unsigned char lowercase[26] = {0};
     unsigned char uppercase[26] = {0};
@@ -321,17 +351,24 @@ Status finding_most_significant_column(KeywordData *data, unsigned char **signif
     *significant_column_order = column_index;
 
     return NO_ERROR;
-}
+} */
 
-Status calculating_static_hash(const KeywordData *data, const unsigned char *significant_column_order) {
+/* Status calculating_static_hash(const KeywordData *data, const unsigned char *significant_column_order) {
     Status allocation_status = NO_ERROR;
+
     unsigned short *scoreboard = NULL;
     unsigned short *score_lookup = NULL;
     unsigned short *scoreboard_total = NULL;
+
+    LandingSpotVector landing_spot;
+
     size_t target_index = 0;
     size_t highest_slot_index = 0;
     unsigned char selected_char = 0;
-    LandingSpotVector landing_spot;
+
+    unsigned char collided_index = 0;
+
+
     size_t i,j,k = 0;
 
     scoreboard = (unsigned short *) calloc(data->keyword_count * data->longest_keyword_len, sizeof(unsigned short));
@@ -376,14 +413,21 @@ Status calculating_static_hash(const KeywordData *data, const unsigned char *sig
             }
 
             scoreboard_total[j] += data->keywords[j].len;
+            if (scoreboard_total[j] > highest_slot_index) {
+                highest_slot_index = scoreboard_total[j];
+            }
             if (landing_spot.capacity < scoreboard_total[j]) {
                 reallocate_landing_spot_vector(&landing_spot, landing_spot.capacity*10);
             }
 
             if (landing_spot.array[scoreboard_total[j]] == 0) {
-                landing_spot.array[scoreboard_total[j]] = 1;
+                landing_spot.array[scoreboard_total[j]] = (unsigned char) j;
             } else {
-
+                collided_index = landing_spot.array[scoreboard_total[j]];
+                if (data->keyword_column[significant_column_order[0] * data->keyword_count + j] == data->keyword_column[significant_column_order[0] * data->keyword_count + collided_index]
+                    && data->keywords[j].len == data->keywords[collided_index].len) {
+                        break;
+                }
             }
         }
 
@@ -391,35 +435,36 @@ Status calculating_static_hash(const KeywordData *data, const unsigned char *sig
     }
 
     return NO_ERROR;
-}
+} */
 
 Status parser_start(const FileString *filestring) {
-    size_t line_count = 0;
-    MappingMode mapping_mode = KEY_ENUMERATION;
     Status status = NO_ERROR;
+    MappingMode mapping_mode = KEY_ENUMERATION;
+    size_t line_count = 0;
+
     KeywordData keyword_data = {NULL,NULL,NULL,0,0};
-    unsigned char *significant_column_order = NULL;
+/*     unsigned char *significant_column_order = NULL; */
 
     status = header_parse(filestring, &line_count, &mapping_mode);
     if (status != NO_ERROR) {return status;}
 
-
-    switch (mapping_mode) {
-        case KEY_VALUE_PAIR:
-            status = body_parse_key_value(filestring, &line_count, &keyword_data);
-            if (status != NO_ERROR) {return status;}
-            break;
-
-        default:
-            break;
+    if (mapping_mode == KEY_VALUE_PAIR) {
+        status = body_parse_key_value(filestring, &line_count, &keyword_data);
+        if (status != NO_ERROR) {return status;}
+    } else {
+        /* i'll fill this later */
     }
 
-    status = sort_keywords(filestring,&keyword_data);
+    print_keyword_data(&keyword_data);
+
+    status = sort_keywords(&keyword_data);
     if (status != NO_ERROR) {return status;}
-    status = finding_most_significant_column(&keyword_data,&significant_column_order);
-    if (status != NO_ERROR) {return status;}
-    status = calculating_static_hash(&keyword_data,significant_column_order);
-    if (status != NO_ERROR) {return status;}
+
+/*     status = finding_most_significant_column(&keyword_data,&significant_column_order);
+    if (status != NO_ERROR) {return status;} */
+
+/*     status = calculating_static_hash(&keyword_data,significant_column_order);
+    if (status != NO_ERROR) {return status;} */
 
     return status;
 }

@@ -1,3 +1,6 @@
 CompileFlags:
   Add:
-    - "-Iinclude"
+    - -Iinclude
+    - -std=c89
+    - -x
+    - c
