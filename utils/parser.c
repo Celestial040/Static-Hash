@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "char_manip.h"
+#include "sort/descending/keywords_length.h"
 /* #include "vector/landing_spot.h"  */
 
 typedef unsigned char MappingMode;
@@ -225,6 +226,100 @@ Status body_parse_key_value(const FileString *filestring, size_t *line_count, Ke
     return NO_ERROR;
 }
 
+Status column_selection(KeywordData *data) {
+    Status status = NO_ERROR;
+    unsigned char i,j,k = 0;
+
+    unsigned short *column_separate_score = NULL;
+    unsigned char column_lowercase_count[26] = {0};
+    unsigned char column_uppercase_count[26] = {0};
+    unsigned char *excluded_mark = NULL;
+    unsigned char start = 0;
+    unsigned char length = 1;
+
+    char selected_char = 0;
+
+    column_separate_score = calloc(data->longest_keyword_len, sizeof(unsigned short));
+    excluded_mark = calloc(data->keyword_count, sizeof(unsigned char));
+
+    if (column_separate_score == NULL || excluded_mark == NULL) {
+        return ALLOCATION_ERROR;
+    }
+
+    status = keywords_length_sort(data);
+    if (status != NO_ERROR) {
+        return status;
+    }
+
+    for (i = 1; i < data->keyword_count; i++) {
+        if (data->keywords_length[i] == data->keywords_length[start]) {
+            length++;
+            continue;
+        }
+
+        if (length == 1) {
+            excluded_mark[start] = 1;
+            start = i;
+            length = 1;
+            continue;
+        }
+
+        for (j = 0; j < data->keywords_length[start]; j++) {
+            column_separate_score[j] += length * (length-1)/2;
+            for (k = start; k < length; k++) {
+                selected_char = data->keywords[k * data->longest_keyword_len + j];
+                if (is_uppercase_alphabet(selected_char)) {
+                    column_uppercase_count[selected_char - 'A']++;
+                } else {
+                    column_lowercase_count[selected_char - 'a']++;
+                }
+            }
+
+            for (k = 0; k < 26; k++) {
+                if (column_lowercase_count[k] > 1) {
+                    column_separate_score[j] -= column_lowercase_count[k] * (column_lowercase_count[k] - 1) / 2;
+                }
+                column_lowercase_count[k] = 0;
+                if (column_uppercase_count[k] > 1) {
+                    column_separate_score[j] -= column_uppercase_count[k] * (column_uppercase_count[k] - 1) / 2;
+                }
+                column_uppercase_count[k] = 0;
+            }
+
+            printf("%d \n",column_separate_score[j]);
+        }
+    }
+
+    for (j = 0; j < data->keywords_length[start]; j++) {
+        column_separate_score[j] += length * (length-1)/2;
+        for (k = start; k < length; k++) {
+            selected_char = data->keywords[k * data->longest_keyword_len + j];
+            if (is_uppercase_alphabet(selected_char)) {
+                column_uppercase_count[selected_char - 'A']++;
+            } else {
+                column_lowercase_count[selected_char - 'a']++;
+            }
+        }
+
+        for (k = 0; k < 26; k++) {
+            if (column_lowercase_count[k] > 1) {
+                column_separate_score[j] -= column_lowercase_count[k] * (column_lowercase_count[k] - 1) / 2;
+            }
+            column_lowercase_count[k] = 0;
+            if (column_uppercase_count[k] > 1) {
+                column_separate_score[j] -= column_uppercase_count[k] * (column_uppercase_count[k] - 1) / 2;
+            }
+            column_uppercase_count[k] = 0;
+        }
+
+        printf("%d \n",column_separate_score[j]);
+    }
+
+
+    return NO_ERROR;
+
+}
+
 
 Status parser_start(const FileString *filestring) {
     Status status = NO_ERROR;
@@ -243,7 +338,13 @@ Status parser_start(const FileString *filestring) {
         /* i'll fill this later */
     }
 
-    print_keyword_data(&keyword_data);
+/*     print_keyword_data(&keyword_data); */
+
+
+    status = column_selection(&keyword_data);
+    if (status != NO_ERROR) {return status;}
+
+/*     print_keyword_data(&keyword_data); */
 
 
 
