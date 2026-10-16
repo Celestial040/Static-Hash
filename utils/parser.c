@@ -7,8 +7,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include "char_manip.h"
-#include "sort/descending/most_collide.h"
-#include "sort/descending/most_unique_column.h"
 /* #include "vector/landing_spot.h"  */
 
 typedef unsigned char MappingMode;
@@ -23,29 +21,23 @@ void print_keyword_data(KeywordData *data) {
     for (i = 0; i < data->keyword_count; i++) {
 
         for (j = 0; j < data->longest_keyword_len; j++) {
-            if (data->keywords[i * data->keyword_count + j] == 0) {
+            if (data->keywords[i * data->longest_keyword_len + j] == 0) {
                 break;
             }
-            printf("%c ",data->keywords[i * data->keyword_count + j]);
+            printf("%c ",data->keywords[i * data->longest_keyword_len + j]);
         }
         printf("\n");
     }
 
     printf("\n");
 
-    for (i = 0; i < data->longest_keyword_len; i++) {
-
-        for (j = 0; j < data->keyword_count; j++) {
-            if (data->keyword_column[i * data->longest_keyword_len + j] == 0) {
-                printf("  ");
-                continue;
-            }
-            printf("%c ",data->keyword_column[i * data->longest_keyword_len + j]);
-        }
-        printf("\n");
+    for (i = 0; i < data->keyword_count; i++) {
+        printf("%d \n", data->keywords_length[i]);
     }
 
     printf("\n");
+
+
 }
 
 Status header_parse(const FileString *filestring, size_t *line_count, MappingMode *mapping_mode) {
@@ -131,7 +123,7 @@ Status body_parse_key_value(const FileString *filestring, size_t *line_count, Ke
     TokenPointer tokenpointer;
 
     char *keywords = NULL;
-    char *keyword_column = NULL;
+    unsigned char *keywords_length = NULL;
     unsigned short *values_pair = NULL;
 
     size_t body_start_index = get_lexer_tail();
@@ -192,8 +184,8 @@ Status body_parse_key_value(const FileString *filestring, size_t *line_count, Ke
         return ALLOCATION_ERROR;
     }
 
-    keyword_column = (char *) calloc(keyword_count * longest_keyword_len , sizeof(char));
-    if (keyword_column == NULL) {
+    keywords_length = (unsigned char *) calloc(keyword_count , sizeof(char));
+    if (keywords_length == NULL) {
         return ALLOCATION_ERROR;
     }
 
@@ -202,14 +194,15 @@ Status body_parse_key_value(const FileString *filestring, size_t *line_count, Ke
         return ALLOCATION_ERROR;
     }
 
+
     set_lexer_index(body_start_index);
 
     for (i = 0; i < keyword_count; i++) {
         tokenpointer = lexer_scan(filestring);
+        keywords_length[i] = (unsigned char) tokenpointer.len;
 
         for (j = 0; j < tokenpointer.len; j++) {
-            keywords[i * keyword_count + j] =  filestring->start[tokenpointer.start + j];
-            keyword_column[j * keyword_count + i] = filestring->start[tokenpointer.start + j];
+            keywords[i * longest_keyword_len + j] =  filestring->start[tokenpointer.start + j];
         }
 
         tokenpointer = lexer_scan(filestring);
@@ -224,7 +217,7 @@ Status body_parse_key_value(const FileString *filestring, size_t *line_count, Ke
     }
 
     result_output->keywords = keywords;
-    result_output->keyword_column = keyword_column;
+    result_output->keywords_length = keywords_length;
     result_output->values_pair = values_pair;
     result_output->keyword_count = keyword_count;
     result_output->longest_keyword_len = longest_keyword_len;
@@ -232,220 +225,13 @@ Status body_parse_key_value(const FileString *filestring, size_t *line_count, Ke
     return NO_ERROR;
 }
 
-Status sort_keywords(KeywordData *data) {
-    Status status = NO_ERROR;
-
-    unsigned char lowercase[26] = {0};
-    unsigned char uppercase[26] = {0};
-
-    size_t target_index = 0;
-    char selected_char = 0;
-
-    unsigned short *keyword_score = NULL;
-    size_t i,j = 0;
-
-    keyword_score = (unsigned short *) calloc(data->keyword_count,sizeof(unsigned short));
-    if (keyword_score == NULL) {
-        return ALLOCATION_ERROR;
-    }
-
-    for (i = 0; i < data->longest_keyword_len; i++) {
-        for (j = 0; j < data->keyword_count; j++) {
-
-            target_index = i * data->longest_keyword_len + j;
-            selected_char = data->keyword_column[target_index];
-
-            if (selected_char == 0) {
-                continue;
-            }
-
-            if (is_lowercase_alphabet(selected_char)) {
-                lowercase[selected_char - 'a'] += 1;
-            } else {
-                uppercase[selected_char - 'A'] += 1;
-            }
-        }
-
-        for (j = 0; j < data->keyword_count; j++) {
-
-            if (data->keyword_column[j] == 0) {
-                continue;
-            }
-            if (is_lowercase_alphabet(data->keyword_column[j])) {
-                keyword_score[j] += lowercase[data->keyword_column[j] - 'a'];
-            } else {
-                keyword_score[j] += uppercase[data->keyword_column[j] - 'A'];
-            }
-        }
-
-        for (j = 0; j < 26; j++) {
-            lowercase[j] = 0;
-            uppercase[j] = 0;
-        }
-    }
-
-    status = most_collide_keyword_sort(data, keyword_score);
-    if (status != NO_ERROR) {
-        free(keyword_score);
-        return status;
-    }
-
-    free(keyword_score);
-
-    return NO_ERROR;
-}
-
-Status finding_most_significant_column(KeywordData *data) {
-    Status status = NO_ERROR;
-    unsigned char lowercase[26] = {0};
-    unsigned char uppercase[26] = {0};
-    unsigned char *column_uniqueness_score = NULL;
-    unsigned char *column_index = NULL;
-    size_t i, j = 0;
-
-    column_uniqueness_score = (unsigned char *) calloc(data->longest_keyword_len,sizeof(unsigned char));
-    if (column_uniqueness_score == NULL) {
-        return ALLOCATION_ERROR;
-    }
-
-    column_index = (unsigned char *) malloc(sizeof(unsigned char) * data->longest_keyword_len);
-    if (column_index == NULL) {
-        return ALLOCATION_ERROR;
-    }
-
-    for (i = 0; i < data->longest_keyword_len; i++) {
-        column_index[i] = (unsigned char) i;
-    }
-
-    for (i = 0; i < data->longest_keyword_len; i++) {
-        for (j = i*data->keyword_count; j < (i+1)*data->keyword_count; j++) {
-
-            if (data->keyword_column[j] == 0) {
-                continue;
-            }
-
-            if (is_lowercase_alphabet(data->keyword_column[j])) {
-                if (lowercase[data->keyword_column[j] - 'a'] == 0) {
-                    lowercase[data->keyword_column[j] - 'a'] = 1;
-                }
-
-            } else {
-                if (uppercase[data->keyword_column[j] - 'A'] == 0) {
-                    uppercase[data->keyword_column[j] - 'A'] = 1;
-                }
-            }
-        }
-
-        for (j = 0; j < 26; j++) {
-            column_uniqueness_score[i] += lowercase[j];
-            column_uniqueness_score[i] += uppercase[j];
-
-            lowercase[j] = 0;
-            uppercase[j] = 0;
-        }
-    }
-
-    status = most_unique_column_sort(data, column_uniqueness_score, column_index );
-    if (status != NO_ERROR) {
-        return status;
-    }
-
-    free(column_uniqueness_score);
-    free(column_index);
-
-    return NO_ERROR;
-}
-
-/* Status calculating_static_hash(const KeywordData *data, const unsigned char *significant_column_order) {
-    Status allocation_status = NO_ERROR;
-
-    unsigned short *scoreboard = NULL;
-    unsigned short *score_lookup = NULL;
-    unsigned short *scoreboard_total = NULL;
-
-    LandingSpotVector landing_spot;
-
-    size_t target_index = 0;
-    size_t highest_slot_index = 0;
-    unsigned char selected_char = 0;
-
-    unsigned char collided_index = 0;
-
-
-    size_t i,j,k = 0;
-
-    scoreboard = (unsigned short *) calloc(data->keyword_count * data->longest_keyword_len, sizeof(unsigned short));
-    if (scoreboard == NULL) {
-        return ALLOCATION_ERROR;
-    }
-
-    score_lookup = (unsigned short *) calloc(26 * 2 * data->longest_keyword_len, sizeof(unsigned short));
-    if (score_lookup == NULL) {
-        return ALLOCATION_ERROR;
-    }
-
-    scoreboard_total = (unsigned short *) calloc(data->keyword_count, sizeof(unsigned short));
-    if (scoreboard_total == NULL) {
-        return ALLOCATION_ERROR;
-    }
-
-    allocation_status = allocate_landing_spot_vector(&landing_spot, 1024*5);
-    if (allocation_status != NO_ERROR) {
-        return allocation_status;
-    }
-
-    for (i = 0; i < 1024*5; i++) {
-        landing_spot.array[i] = 0;
-    }
-
-    for (i = 0; i < data->longest_keyword_len; i++) {
-        for (j = 0; j < data->keyword_count; j++) {
-            target_index = significant_column_order[0] * data->keyword_count + j;
-            selected_char = data->keyword_column[target_index];
-
-            if (is_lowercase_alphabet((char)selected_char)) {
-                scoreboard[j * data->keyword_count + significant_column_order[0]] += score_lookup[data->keyword_column[target_index] - 'a'];
-            } else {
-                scoreboard[j * data->keyword_count + significant_column_order[0]] += score_lookup[data->keyword_column[target_index] - 'A'];
-            }
-        }
-
-        for (j = 0; j < data->keyword_count; j++) {
-            for (k = 0; k < data->longest_keyword_len; k++) {
-                scoreboard_total[j] += scoreboard[j * data->keyword_count + k];
-            }
-
-            scoreboard_total[j] += data->keywords[j].len;
-            if (scoreboard_total[j] > highest_slot_index) {
-                highest_slot_index = scoreboard_total[j];
-            }
-            if (landing_spot.capacity < scoreboard_total[j]) {
-                reallocate_landing_spot_vector(&landing_spot, landing_spot.capacity*10);
-            }
-
-            if (landing_spot.array[scoreboard_total[j]] == 0) {
-                landing_spot.array[scoreboard_total[j]] = (unsigned char) j;
-            } else {
-                collided_index = landing_spot.array[scoreboard_total[j]];
-                if (data->keyword_column[significant_column_order[0] * data->keyword_count + j] == data->keyword_column[significant_column_order[0] * data->keyword_count + collided_index]
-                    && data->keywords[j].len == data->keywords[collided_index].len) {
-                        break;
-                }
-            }
-        }
-
-        break;
-    }
-
-    return NO_ERROR;
-} */
 
 Status parser_start(const FileString *filestring) {
     Status status = NO_ERROR;
     MappingMode mapping_mode = KEY_ENUMERATION;
     size_t line_count = 0;
 
-    KeywordData keyword_data = {NULL,NULL,NULL,NULL,0,0};
+    KeywordData keyword_data = {NULL,NULL,NULL,0,0};
 
     status = header_parse(filestring, &line_count, &mapping_mode);
     if (status != NO_ERROR) {return status;}
@@ -459,18 +245,7 @@ Status parser_start(const FileString *filestring) {
 
     print_keyword_data(&keyword_data);
 
-    status = sort_keywords(&keyword_data);
-    if (status != NO_ERROR) {return status;}
 
-    print_keyword_data(&keyword_data);
-
-    status = finding_most_significant_column(&keyword_data);
-    if (status != NO_ERROR) {return status;}
-
-    print_keyword_data(&keyword_data);
-
-/*     status = calculating_static_hash(&keyword_data,significant_column_order);
-    if (status != NO_ERROR) {return status;} */
 
     return status;
 }

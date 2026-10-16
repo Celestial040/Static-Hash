@@ -8,7 +8,7 @@ int main(void) {
     FileString test_file;
 
 
-    status = load_file_to_memory("test_text/input.txt", &test_file);
+    status = load_file_to_memory("test_text/input copy.txt", &test_file);
     if (status != NO_ERROR) {
         status_print(status);
         return 1;

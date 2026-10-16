@@ -64,7 +64,7 @@ void column_uniqueness_internal_quicksort(unsigned char *column_uniqueness, unsi
 }
 
 Status most_unique_column_sort(KeywordData *keyword_data, unsigned char *column_uniqueness, unsigned char *column_index) {
-    size_t i, j = 0;
+/*     size_t i, j = 0; */
     unsigned short pivot = 0;
     char *temp_keyword_column = NULL;
 
@@ -76,14 +76,14 @@ Status most_unique_column_sort(KeywordData *keyword_data, unsigned char *column_
     pivot = median_of_three(column_uniqueness[0], column_uniqueness[(keyword_data->keyword_count-1) / 2], column_uniqueness[keyword_data->keyword_count-1]);
     column_uniqueness_internal_quicksort(column_uniqueness, column_index, 0, keyword_data->keyword_count-1, pivot);
 
-    for (i = 0; i < keyword_data->longest_keyword_len; i++) {
+/*     for (i = 0; i < keyword_data->longest_keyword_len; i++) {
         for (j = 0; j < keyword_data->keyword_count; j++) {
             temp_keyword_column[i * keyword_data->longest_keyword_len + j] = keyword_data->keyword_column[column_index[i] * keyword_data->longest_keyword_len + j] ;
         }
     }
 
     free(keyword_data->keyword_column);
-    keyword_data->keyword_column = temp_keyword_column;
+    keyword_data->keyword_column = temp_keyword_column; */
 
     return NO_ERROR;
 }
