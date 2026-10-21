@@ -8,8 +8,6 @@
 #include <string.h>
 #include "char_manip.h"
 #include "grouping/keywords_length.h"
-#include "sort/descending/keywords_length.h"
-/* #include "vector/landing_spot.h"  */
 
 typedef unsigned char MappingMode;
 enum {
@@ -133,7 +131,6 @@ Status body_parse_key_value(const FileString *filestring, size_t *line_count, Ke
 
     unsigned char keyword_count = 0;
     unsigned char longest_keyword_len = 0;
-    unsigned char shortest_keyword_len = 255;
 
     while (1) {
         tokenpointer = lexer_scan(filestring);
@@ -157,10 +154,6 @@ Status body_parse_key_value(const FileString *filestring, size_t *line_count, Ke
 
         if (tokenpointer.len > longest_keyword_len) {
             longest_keyword_len = (unsigned char) tokenpointer.len;
-        }
-
-        if (tokenpointer.len < shortest_keyword_len) {
-            shortest_keyword_len = (unsigned char) tokenpointer.len;
         }
 
         tokenpointer = lexer_scan(filestring);
@@ -227,34 +220,41 @@ Status body_parse_key_value(const FileString *filestring, size_t *line_count, Ke
     result_output->values_pair = values_pair;
     result_output->keyword_count = keyword_count;
     result_output->longest_keyword_len = longest_keyword_len;
-    result_output->shortest_keyword_len = shortest_keyword_len;
 
     return NO_ERROR;
 }
 
-Status column_grouping_by_length(KeywordData *data) {
+Status row_grouping_by_length(KeywordData *data, unsigned char **grouping_count_array, unsigned char **grouping_index_start) {
     Status status = NO_ERROR;
 
     unsigned char i = 0;
+    unsigned char *length_count = NULL;
     unsigned char *grouping_start = NULL;
     unsigned char prev = 0;
     unsigned char offset = 0;
 
-    grouping_start = calloc(data->longest_keyword_len + 1, sizeof(unsigned char));
+    length_count = (unsigned char *) calloc(data->longest_keyword_len + 1, sizeof(unsigned char));
+    if (length_count == NULL) {
+        return ALLOCATION_ERROR;
+    }
+
+    grouping_start = (unsigned char *) calloc(data->longest_keyword_len + 1, sizeof(unsigned char));
     if (grouping_start == NULL) {
         return ALLOCATION_ERROR;
     }
 
     for (i = 0; i < data->keyword_count; i++) {
-        grouping_start[data->keywords_length[i]]++;
+        length_count[data->keywords_length[i]]++;
     }
 
     for (i = 0; i < data->longest_keyword_len + 1; i++) {
-        prev = grouping_start[i];
+        prev = length_count[i];
         grouping_start[i] = offset;
         offset += prev;
-        printf("%d : %d\n", i, grouping_start[i]);
     }
+
+    *grouping_count_array = length_count;
+    *grouping_index_start = grouping_start;
 
     status = grouping_by_keywords_length(data, grouping_start);
     if (status != NO_ERROR) {
@@ -267,10 +267,70 @@ Status column_grouping_by_length(KeywordData *data) {
 Status column_selection(KeywordData *data) {
     Status status = NO_ERROR;
 
-    status = column_grouping_by_length(data);
+    unsigned char i,j,k = 0;
+
+    unsigned char shortest_keyword_length = data->keywords_length[0];
+
+    unsigned char uppercase[26] = {0};
+    unsigned char lowercase[26] = {0};
+    unsigned short *column_separation_score = NULL;
+    unsigned char *grouping_count_array = NULL;
+    unsigned char *grouping_index_start = NULL;
+
+    unsigned short temp_total = 0;
+
+    char selected_char = 0;
+
+    status = row_grouping_by_length(data, &grouping_count_array, &grouping_index_start);
     if (status != NO_ERROR) {
         return status;
     }
+
+    column_separation_score = (unsigned short *) calloc(data->longest_keyword_len, sizeof(unsigned short));
+    if (column_separation_score == NULL) {
+        return ALLOCATION_ERROR;
+    }
+
+    for (i = shortest_keyword_length; i < data->longest_keyword_len + 1; i++) {
+        temp_total = grouping_count_array[i] * (grouping_count_array[i] - 1) / 2;
+        for (j = 0; j < i; j++) {
+            column_separation_score[j] += temp_total;
+        }
+
+        for (j = 0; j < i; j++) {
+            for (k = grouping_index_start[i]; k < grouping_index_start[i]+grouping_count_array[i] ; k++) {
+                selected_char = data->keywords[k * data->longest_keyword_len + j];;
+                if (is_lowercase_alphabet(selected_char) == 1) {
+                    lowercase[selected_char - 'a']++;
+                } else {
+                    uppercase[selected_char - 'A']++;
+                }
+            }
+
+            for (k = 0; k < 26; k++) {
+
+
+                if (lowercase[k] > 0) {
+                    column_separation_score[j] -= lowercase[k] * (lowercase[k] - 1) / 2;
+                }
+
+                if (uppercase[k] > 0) {
+                    column_separation_score[j] -= uppercase[k] * (uppercase[k] - 1) / 2;
+                }
+
+                lowercase[k] = 0;
+                uppercase[k] = 0;
+            }
+        }
+
+    }
+
+
+    for (j = 0; j < data->longest_keyword_len; j++) {
+        printf("%d \n", column_separation_score[j]);
+    }
+
+
 
     return NO_ERROR;
 }
@@ -281,7 +341,7 @@ Status parser_start(const FileString *filestring) {
     MappingMode mapping_mode = KEY_ENUMERATION;
     size_t line_count = 0;
 
-    KeywordData keyword_data = {NULL,NULL,NULL,0,0,0};
+    KeywordData keyword_data = {NULL,NULL,NULL,0,0};
 
     status = header_parse(filestring, &line_count, &mapping_mode);
     if (status != NO_ERROR) {return status;}
