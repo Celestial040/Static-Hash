@@ -11,6 +11,7 @@ typedef struct KeywordData {
     unsigned short *values_pair;
     unsigned char keyword_count;
     unsigned char longest_keyword_len;
+    unsigned char shortest_keyword_len;
 } KeywordData;
 
 typedef struct OptionalParser {

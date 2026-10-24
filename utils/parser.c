@@ -23,6 +23,16 @@ typedef struct OptionalParseHeader {
     MappingMode mapping_mode;
 }OptionalParseHeader;
 
+typedef struct OptionalParseKeyValue {
+    KeywordData data;
+    Status status;
+}OptionalParseKeyValue;
+
+typedef struct OptionalValueConverter {
+    Status status;
+    unsigned short value;
+} OptionalValueConverter;
+
 typedef struct TextLine {
     size_t start;
     size_t length;
@@ -73,6 +83,32 @@ void print_keyword_data_details(KeywordData *data) {
 
     printf("\n");
 
+}
+
+OptionalValueConverter value_converter(const FileString filestring, const size_t start, const size_t length) {
+    OptionalValueConverter result = {NO_ERROR, 0};
+    size_t i = 0;
+    unsigned short total = 0;
+    unsigned short power = 1;
+
+    if (length >= 5) {
+        result.status = MAX_LIMIT_EXCEEDED;
+        return result;
+    }
+
+    for (i = length; i > 0; i--) {
+        total += ((unsigned short) (filestring.start[start+i-1] - '0')) * power;
+        power *= 10;
+    }
+
+    if (total > 9999) {
+        result.status = MAX_LIMIT_EXCEEDED;
+        return result;
+    }
+
+    result.value = total;
+
+    return result;
 }
 
 TextLine find_next_endline(FileString filestring, size_t current_index){
@@ -145,6 +181,8 @@ OptionalParseHeader parse_header(const FileString filestring, const char *filena
         return result;
     }
 
+
+
     index_position = tokenpointer.start + tokenpointer.len;
 
     tokenpointer = lexer_scan(filestring,index_position);
@@ -157,6 +195,8 @@ OptionalParseHeader parse_header(const FileString filestring, const char *filena
         result.status = MISMATCH_EXPECTATION;
         return result;
     }
+
+
 
     index_position = tokenpointer.start + tokenpointer.len;
 
@@ -188,9 +228,15 @@ OptionalParseHeader parse_header(const FileString filestring, const char *filena
         return result;
     }
 
+
+
     index_position = tokenpointer.start + tokenpointer.len;
 
     tokenpointer = lexer_scan(filestring,index_position);
+
+
+    printf("%ld , %ld, %d \n", tokenpointer.start, tokenpointer.len, tokenpointer.token);
+
 
     if (tokenpointer.token != TOKEN_OPEN_CURLY_BRACKET) {
         text_line = find_next_endline(filestring, index_position);
@@ -200,6 +246,7 @@ OptionalParseHeader parse_header(const FileString filestring, const char *filena
         result.status = MISMATCH_EXPECTATION;
         return result;
     }
+
 
     index_position = tokenpointer.start + tokenpointer.len;
 
@@ -257,114 +304,166 @@ OptionalParseHeader parse_header(const FileString filestring, const char *filena
     return result;
 }
 
-/* Status body_parse_key_value(const FileString *filestring, size_t *line_count, KeywordData *result_output) {
-    Status converting_string_status = NO_ERROR;
+OptionalParseKeyValue body_parse_key_value(const FileString filestring, const char *filename, const size_t start_index, const size_t start_line_count) {
+    OptionalParseKeyValue result = {{NULL,NULL,NULL,0,0,0}, NO_ERROR};
+    OptionalValueConverter value_convert_result = {NO_ERROR, 0};
 
-    TokenPointer tokenpointer;
+    TextLine text_line = {NO_ERROR, 0};
+    TokenPointer tokenpointer = {0,0,TOKEN_UNKNOWN};
+    size_t index_position = start_index;
+    size_t line_count = start_line_count;
 
-    char *keywords = NULL;
-    unsigned char *keywords_length = NULL;
-    unsigned short *values_pair = NULL;
+    KeywordData data = {NULL,NULL,NULL,0,0,255};
 
-    size_t body_start_index = get_lexer_tail();
-    size_t i , j = 0;
-
-    unsigned char keyword_count = 0;
-    unsigned char longest_keyword_len = 0;
+    size_t i, j = 0;
 
     while (1) {
-        tokenpointer = lexer_scan(filestring);
+        tokenpointer = lexer_scan(filestring,index_position);
 
-        if (keyword_count > 0 && tokenpointer.token == TOKEN_EOF) {
-            *line_count += 1;
+        if (data.keyword_count > 0 && tokenpointer.token == TOKEN_EOF) {
+            line_count += 1;
             break;
         }
 
         if (tokenpointer.token != TOKEN_IDENTIFIER) {
-            return MISMATCH_EXPECTATION;
+            text_line = find_next_endline(filestring, index_position);
+            fprintf(stderr, "%s:%ld:%ld Error identifier expected \n", filename, line_count, index_position);
+            fprintf(stderr, "|   %.*s\n", (int)(text_line.length), filestring.start+ text_line.start);
+            fprintf(stderr, "|   %*s^\n", (int)(index_position - text_line.start), "");
+            result.status = MISMATCH_EXPECTATION;
+            return result;
         }
 
-        if (keyword_count == 255) {
-            return MAX_LIMIT_EXCEEDED;
+        if (data.keyword_count == 255) {
+            text_line = find_next_endline(filestring, index_position);
+            fprintf(stderr, "%s:%ld:%ld Error keyword limit exceeded (max keywords count : 255) \n", filename, line_count, index_position);
+            fprintf(stderr, "|   %.*s\n", (int)(text_line.length), filestring.start+ text_line.start);
+            fprintf(stderr, "|   %*s^\n", (int)(index_position - text_line.start), "");
+            result.status = MAX_LIMIT_EXCEEDED;
+            return result;
         }
 
         if (tokenpointer.len > 255) {
-            return STRING_TOO_LONG;
+            text_line = find_next_endline(filestring, index_position);
+            fprintf(stderr, "%s:%ld:%ld Error keyword length exceeded (max keywords length : 255) \n", filename, line_count, index_position);
+            fprintf(stderr, "|   %.*s\n", (int)(text_line.length), filestring.start+ text_line.start);
+            fprintf(stderr, "|   %*s^\n", (int)(index_position - text_line.start), "");
+            result.status = STRING_TOO_LONG;
+            return result;
         }
 
-        if (tokenpointer.len > longest_keyword_len) {
-            longest_keyword_len = (unsigned char) tokenpointer.len;
+        if (tokenpointer.len > data.longest_keyword_len) {
+            data.longest_keyword_len = (unsigned char) tokenpointer.len;
         }
 
-        tokenpointer = lexer_scan(filestring);
+        if (tokenpointer.len < data.shortest_keyword_len) {
+            data.shortest_keyword_len = (unsigned char) tokenpointer.len;
+        }
+
+        index_position = tokenpointer.start + tokenpointer.len;
+
+        tokenpointer = lexer_scan(filestring,index_position);
 
         if (tokenpointer.token != TOKEN_COMMA) {
-            return MISMATCH_EXPECTATION;
+            text_line = find_next_endline(filestring, index_position);
+            fprintf(stderr, "%s:%ld:%ld Error ',' expected \n", filename, line_count, index_position);
+            fprintf(stderr, "|   %.*s\n", (int)(text_line.length), filestring.start+ text_line.start);
+            fprintf(stderr, "|   %*s^\n", (int)(index_position - text_line.start), "");
+            result.status = MISMATCH_EXPECTATION;
+            return result;
         }
 
-        tokenpointer = lexer_scan(filestring);
+        index_position = tokenpointer.start + tokenpointer.len;
+
+        tokenpointer = lexer_scan(filestring,index_position);
 
         if (tokenpointer.token != TOKEN_NUMERIC_LITERAL) {
-            return MISMATCH_EXPECTATION;
+            text_line = find_next_endline(filestring, index_position);
+            fprintf(stderr, "%s:%ld:%ld Error numeric value expected \n", filename, line_count, index_position);
+            fprintf(stderr, "|   %.*s\n", (int)(text_line.length), filestring.start+ text_line.start);
+            fprintf(stderr, "|   %*s^\n", (int)(index_position - text_line.start), "");
+            result.status = MISMATCH_EXPECTATION;
+            return result;
         }
 
-        tokenpointer = lexer_scan(filestring);
+        index_position = tokenpointer.start + tokenpointer.len;
+
+        tokenpointer = lexer_scan(filestring,index_position);
 
         if (tokenpointer.token != TOKEN_ENDLINE && tokenpointer.token != TOKEN_EOF) {
-            return MISMATCH_EXPECTATION;
+            text_line = find_next_endline(filestring, index_position);
+            fprintf(stderr, "%s:%ld:%ld Error newline expected \n", filename, line_count, index_position);
+            fprintf(stderr, "|   %.*s\n", (int)(text_line.length), filestring.start+ text_line.start);
+            fprintf(stderr, "|   %*s^\n", (int)(index_position - text_line.start), "");
+            result.status = MISMATCH_EXPECTATION;
+            return result;
         }
 
-        *line_count += 1;
-        keyword_count++;
+        index_position = tokenpointer.start + tokenpointer.len;
+        line_count += 1;
+        data.keyword_count++;
     }
 
-    keywords = (char *) calloc(keyword_count * longest_keyword_len , sizeof(char));
-    if (keywords == NULL) {
-        return ALLOCATION_ERROR;
+    data.keywords = (char *) calloc(data.keyword_count * data.longest_keyword_len , sizeof(char));
+    if (data.keywords == NULL) {
+        result.status = ALLOCATION_ERROR;
+        return result;
     }
 
-    keywords_length = (unsigned char *) calloc(keyword_count , sizeof(char));
-    if (keywords_length == NULL) {
-        return ALLOCATION_ERROR;
+    data.keywords_length = (unsigned char *) calloc(data.keyword_count , sizeof(char));
+    if (data.keywords_length == NULL) {
+        result.status = ALLOCATION_ERROR;
+        return result;
     }
 
-    values_pair = (unsigned short *) malloc(sizeof(unsigned short) * keyword_count);
-    if (values_pair == NULL ) {
-        return ALLOCATION_ERROR;
+    data.values_pair = (unsigned short *) malloc(sizeof(unsigned short) * data.keyword_count);
+    if (data.values_pair == NULL ) {
+        result.status = ALLOCATION_ERROR;
+        return result;
     }
 
 
-    set_lexer_index(body_start_index);
+    index_position = start_index;
+    line_count = start_line_count;
 
-    for (i = 0; i < keyword_count; i++) {
-        tokenpointer = lexer_scan(filestring);
-        keywords_length[i] = (unsigned char) tokenpointer.len;
+    for (i = 0; i < data.keyword_count; i++) {
+        tokenpointer = lexer_scan(filestring,index_position);
+
+        data.keywords_length[i] = (unsigned char) tokenpointer.len;
 
         for (j = 0; j < tokenpointer.len; j++) {
-            keywords[i * longest_keyword_len + j] =  filestring->start[tokenpointer.start + j];
+            data.keywords[i * data.longest_keyword_len + j] =  filestring.start[tokenpointer.start + j];
         }
 
-        tokenpointer = lexer_scan(filestring);
-        tokenpointer = lexer_scan(filestring);
+        index_position = tokenpointer.start + tokenpointer.len;
+        tokenpointer = lexer_scan(filestring,index_position);
 
-        converting_string_status = string_to_unsigned_short(&filestring->start[tokenpointer.start], tokenpointer.len, &values_pair[i]);
-        if (converting_string_status != NO_ERROR) {
-            return converting_string_status;
+        index_position = tokenpointer.start + tokenpointer.len;
+        tokenpointer = lexer_scan(filestring,index_position);
+
+        value_convert_result = value_converter(filestring, tokenpointer.start, tokenpointer.len);
+        if (value_convert_result.status == DIGITS_TOO_LONG) {
+            fprintf(stderr, "%s:%ld:%ld Error max value limit excedeed (max value: 9999) \n", filename, line_count, index_position);
+            fprintf(stderr, "|   %.*s\n", (int)(text_line.length), filestring.start+ text_line.start);
+            fprintf(stderr, "|   %*s^\n", (int)(index_position - text_line.start), "");
+            result.status = MISMATCH_EXPECTATION;
+            return result;
         }
 
-        tokenpointer = lexer_scan(filestring);
+        data.values_pair[i] = value_convert_result.value;
+
+        index_position = tokenpointer.start + tokenpointer.len;
+        tokenpointer = lexer_scan(filestring,index_position);
+
+        index_position = tokenpointer.start + tokenpointer.len;
+        line_count++;
     }
 
-    result_output->keywords = keywords;
-    result_output->keywords_length = keywords_length;
-    result_output->values_pair = values_pair;
-    result_output->keyword_count = keyword_count;
-    result_output->longest_keyword_len = longest_keyword_len;
-
-    return NO_ERROR;
+    result.data = data;
+    return result;
 }
 
-Status row_grouping_by_length(KeywordData *data, unsigned char *grouping_count_array, unsigned char *grouping_index_start) {
+/* Status row_grouping_by_length(KeywordData *data, unsigned char *grouping_count_array, unsigned char *grouping_index_start) {
     Status status = NO_ERROR;
 
     unsigned char i = 0;
@@ -606,12 +705,13 @@ Status column_selection(KeywordData *data) {
     }
 
     return NO_ERROR;
-}
+} */
 
- */
+
 OptionalParser parser_start(const FileString filestring, const char *filename) {
     OptionalParser result = {NO_ERROR};
     OptionalParseHeader parse_header_result = {0,0,0,KEY_ENUMERATION};
+    OptionalParseKeyValue parse_key_value_result = {{NULL,NULL,NULL,0,0,0}, NO_ERROR};
 
     parse_header_result = parse_header(filestring, filename);
     if (parse_header_result.status != NO_ERROR) {
@@ -619,14 +719,19 @@ OptionalParser parser_start(const FileString filestring, const char *filename) {
         return result;
     }
 
-/*     if (mapping_mode == KEY_VALUE_PAIR) {
-        status = body_parse_key_value(filestring, &line_count, &keyword_data);
-        if (status != NO_ERROR) {return status;}
-    } else {
+    if (parse_header_result.mapping_mode == KEY_VALUE_PAIR) {
+        parse_key_value_result = body_parse_key_value(filestring, filename, parse_header_result.index_position, parse_header_result.line_count);
+        if (parse_key_value_result.status != NO_ERROR) {
+            result.status = parse_key_value_result.status;
+            return result;
+        }
+    } else if (parse_header_result.mapping_mode == KEY_ENUMERATION) {
 
     }
 
-    status = column_selection(&keyword_data);
+    print_keyword_data_details(&parse_key_value_result.data);
+
+/*     status = column_selection(&keyword_data);
     if (status != NO_ERROR) {return status;} */
 
     return result;
