@@ -269,7 +269,8 @@ Status column_selection(KeywordData *data) {
 
     unsigned char i,j,k = 0;
 
-    unsigned char shortest_keyword_length = data->keywords_length[0];
+    unsigned char shortest_keyword_length = 0;
+
 
     unsigned char uppercase[26] = {0};
     unsigned char lowercase[26] = {0};
@@ -281,10 +282,14 @@ Status column_selection(KeywordData *data) {
 
     char selected_char = 0;
 
+
     status = row_grouping_by_length(data, &grouping_count_array, &grouping_index_start);
     if (status != NO_ERROR) {
         return status;
     }
+
+    shortest_keyword_length = data->keywords_length[0];
+
 
     column_separation_score = (unsigned short *) calloc(data->longest_keyword_len, sizeof(unsigned short));
     if (column_separation_score == NULL) {
@@ -299,7 +304,7 @@ Status column_selection(KeywordData *data) {
 
         for (j = 0; j < i; j++) {
             for (k = grouping_index_start[i]; k < grouping_index_start[i]+grouping_count_array[i] ; k++) {
-                selected_char = data->keywords[k * data->longest_keyword_len + j];;
+                selected_char = data->keywords[k * data->longest_keyword_len + j];
                 if (is_lowercase_alphabet(selected_char) == 1) {
                     lowercase[selected_char - 'a']++;
                 } else {
@@ -308,13 +313,11 @@ Status column_selection(KeywordData *data) {
             }
 
             for (k = 0; k < 26; k++) {
-
-
-                if (lowercase[k] > 0) {
+                if (lowercase[k] > 1) {
                     column_separation_score[j] -= lowercase[k] * (lowercase[k] - 1) / 2;
                 }
 
-                if (uppercase[k] > 0) {
+                if (uppercase[k] > 1) {
                     column_separation_score[j] -= uppercase[k] * (uppercase[k] - 1) / 2;
                 }
 
@@ -325,10 +328,12 @@ Status column_selection(KeywordData *data) {
 
     }
 
+    print_keyword_data(data);
 
     for (j = 0; j < data->longest_keyword_len; j++) {
         printf("%d \n", column_separation_score[j]);
     }
+
 
 
 
