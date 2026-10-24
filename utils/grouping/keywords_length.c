@@ -40,7 +40,6 @@ Status grouping_by_keywords_length(KeywordData *data, unsigned char *grouping_st
 
     memcpy(grouping_start_copy, grouping_start, data->longest_keyword_len + 1);
 
-
     for (i = 0; i < data->keyword_count; i++) {
         current_keyword_length = data->keywords_length[i];
         target_index = grouping_start_copy[current_keyword_length];

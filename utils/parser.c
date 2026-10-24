@@ -8,6 +8,7 @@
 #include <string.h>
 #include "char_manip.h"
 #include "grouping/keywords_length.h"
+#include "grouping/selected_column.h"
 
 typedef unsigned char MappingMode;
 enum {
@@ -30,6 +31,23 @@ void print_keyword_data(KeywordData *data) {
     }
 
     printf("\n");
+}
+
+void print_keyword_data_details(KeywordData *data) {
+    size_t i, j = 0;
+
+    for (i = 0; i < data->keyword_count; i++) {
+
+        for (j = 0; j < data->longest_keyword_len; j++) {
+            if (data->keywords[i * data->longest_keyword_len + j] == 0) {
+                break;
+            }
+            printf("%c ",data->keywords[i * data->longest_keyword_len + j]);
+        }
+        printf("\n");
+    }
+
+    printf("\n");
 
     for (i = 0; i < data->keyword_count; i++) {
         printf("%d \n", data->keywords_length[i]);
@@ -37,6 +55,11 @@ void print_keyword_data(KeywordData *data) {
 
     printf("\n");
 
+    for (i = 0; i < data->keyword_count; i++) {
+        printf("%d \n", data->values_pair[i]);
+    }
+
+    printf("\n");
 
 }
 
@@ -224,7 +247,7 @@ Status body_parse_key_value(const FileString *filestring, size_t *line_count, Ke
     return NO_ERROR;
 }
 
-Status row_grouping_by_length(KeywordData *data, unsigned char **grouping_count_array, unsigned char **grouping_index_start) {
+Status row_grouping_by_length(KeywordData *data, unsigned char *grouping_count_array, unsigned char *grouping_index_start) {
     Status status = NO_ERROR;
 
     unsigned char i = 0;
@@ -253,12 +276,117 @@ Status row_grouping_by_length(KeywordData *data, unsigned char **grouping_count_
         offset += prev;
     }
 
-    *grouping_count_array = length_count;
-    *grouping_index_start = grouping_start;
+    memcpy(grouping_count_array, length_count, data->longest_keyword_len + 1);
+    memcpy(grouping_index_start, grouping_start, data->longest_keyword_len + 1);
 
     status = grouping_by_keywords_length(data, grouping_start);
     if (status != NO_ERROR) {
         return status;
+    }
+
+    free(length_count);
+    free(grouping_start);
+
+    return NO_ERROR;
+}
+
+Status row_grouping_by_selected_column(KeywordData *data, unsigned char selected_column , unsigned char *grouping_count_array, unsigned char *grouping_index_start) {
+    Status status = NO_ERROR;
+
+    unsigned char i,j = 0;
+    unsigned char *grouping_count = NULL;
+    unsigned char *grouping_start = NULL;
+    unsigned char insert_count = 0;
+
+    unsigned char prev = 0;
+    unsigned char offset = 0;
+
+    unsigned char uppercase[26] = {0};
+    unsigned char lowercase[26] = {0};
+    unsigned char uppercase_start[26] = {0};
+    unsigned char lowercase_start[26] = {0};
+
+    char selected_char = 0;
+
+    grouping_count = (unsigned char *) calloc(data->longest_keyword_len + 1, sizeof(unsigned char));
+    if (grouping_count == NULL) {
+        return ALLOCATION_ERROR;
+    }
+
+    grouping_start = (unsigned char *) calloc(data->longest_keyword_len + 1, sizeof(unsigned char));
+    if (grouping_start == NULL) {
+        return ALLOCATION_ERROR;
+    }
+
+
+    for (i = data->keywords_length[0]; i < data->longest_keyword_len + 1; i++) {
+        for (j = grouping_index_start[i]; j < grouping_index_start[i] + grouping_count_array[i]; j++) {
+            selected_char = data->keywords[j * data->longest_keyword_len + selected_column];
+            if (is_lowercase_alphabet(selected_char)) {
+                lowercase[selected_char - 'a']++;
+            } else {
+                uppercase[selected_char - 'A']++;
+            }
+        }
+
+        for (j = 0; j < 26; j++) {
+            if (lowercase[j] > 0) {
+                prev = lowercase[j];
+                lowercase_start[j] = offset;
+                offset += prev;
+            }
+        }
+        for (j = 0; j < 26; j++) {
+            if (uppercase[j] > 0) {
+                prev = uppercase[j];
+                uppercase_start[j] = offset;
+                offset += prev;
+            }
+        }
+
+        for (j = 0; j < 26; j++) {
+            if (lowercase[j] > 0) {
+                printf("%c = %d ", 'a' + j, lowercase[j]);
+                printf("%c = %d\n", 'a' + j, lowercase_start[j]);
+                grouping_count[insert_count] = lowercase[j];
+                grouping_start[insert_count] = lowercase_start[j];
+                insert_count++;
+            }
+        }
+
+        for (j = 0; j < 26; j++) {
+            if (uppercase[j] > 0) {
+                printf("%c = %d ",'A' + j, uppercase[j]);
+                printf("%c = %d\n",'A' + j, uppercase_start[j]);
+                grouping_count[insert_count] = uppercase[j];
+                grouping_start[insert_count] = uppercase_start[j];
+                insert_count++;
+            }
+        }
+
+        if (grouping_count_array[i] > 1) {
+            status = grouping_by_selected_column(data, selected_column, uppercase_start, lowercase_start, grouping_index_start[i], grouping_count_array[i]);
+            if (status != NO_ERROR) {
+                return status;
+            }
+        }
+
+        print_keyword_data(data);
+
+        prev = 0;
+        offset = 0;
+
+        for (j = 0; j < 26; j++) {
+            lowercase[j] = 0;
+            lowercase_start[j] = 0;
+            uppercase[j] = 0;
+            uppercase_start[j] = 0;
+        }
+
+    }
+
+    for (i = 0; i < data->longest_keyword_len + 1; i++) {
+        printf("%d \n", grouping_count[i]);
     }
 
     return NO_ERROR;
@@ -268,28 +396,45 @@ Status column_selection(KeywordData *data) {
     Status status = NO_ERROR;
 
     unsigned char i,j,k = 0;
-
     unsigned char shortest_keyword_length = 0;
-
 
     unsigned char uppercase[26] = {0};
     unsigned char lowercase[26] = {0};
-    unsigned short *column_separation_score = NULL;
+
     unsigned char *grouping_count_array = NULL;
     unsigned char *grouping_index_start = NULL;
+
+    unsigned short *column_separation_score = NULL;
+    unsigned char *selected_columns = NULL;
+
+    unsigned char selected_columns_count = 0;
+    unsigned char current_best_column = 0;
 
     unsigned short temp_total = 0;
 
     char selected_char = 0;
 
+    grouping_count_array = (unsigned char *) calloc(data->longest_keyword_len + 1, sizeof(unsigned char));
+    if (grouping_count_array == NULL) {
+        return ALLOCATION_ERROR;
+    }
 
-    status = row_grouping_by_length(data, &grouping_count_array, &grouping_index_start);
+    grouping_index_start = (unsigned char *) calloc(data->longest_keyword_len + 1, sizeof(unsigned char));
+    if (grouping_index_start == NULL) {
+        return ALLOCATION_ERROR;
+    }
+
+    status = row_grouping_by_length(data, grouping_count_array, grouping_index_start);
     if (status != NO_ERROR) {
         return status;
     }
 
     shortest_keyword_length = data->keywords_length[0];
 
+    selected_columns = (unsigned char *) malloc(sizeof(unsigned char) * data->longest_keyword_len);
+    if (selected_columns == NULL) {
+        return ALLOCATION_ERROR;
+    }
 
     column_separation_score = (unsigned short *) calloc(data->longest_keyword_len, sizeof(unsigned short));
     if (column_separation_score == NULL) {
@@ -325,17 +470,23 @@ Status column_selection(KeywordData *data) {
                 uppercase[k] = 0;
             }
         }
-
     }
-
-    print_keyword_data(data);
 
     for (j = 0; j < data->longest_keyword_len; j++) {
-        printf("%d \n", column_separation_score[j]);
+        if (column_separation_score[j] > column_separation_score[current_best_column]) {
+            current_best_column = j;
+        }
     }
 
+    selected_columns[selected_columns_count] = current_best_column;
+    selected_columns_count++;
 
 
+
+    status = row_grouping_by_selected_column(data, current_best_column, grouping_count_array, grouping_index_start);
+    if (status != NO_ERROR) {
+        return status;
+    }
 
     return NO_ERROR;
 }
@@ -355,18 +506,11 @@ Status parser_start(const FileString *filestring) {
         status = body_parse_key_value(filestring, &line_count, &keyword_data);
         if (status != NO_ERROR) {return status;}
     } else {
-        /* i'll fill this later */
+
     }
-
-/*     print_keyword_data(&keyword_data); */
-
 
     status = column_selection(&keyword_data);
     if (status != NO_ERROR) {return status;}
-
-/*     print_keyword_data(&keyword_data); */
-
-
 
     return status;
 }

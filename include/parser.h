@@ -15,5 +15,7 @@ typedef struct KeywordData {
 
 
 Status parser_start(const FileString *filestring);
+void print_keyword_data(KeywordData *data);
+void print_keyword_data_details(KeywordData *data);
 
 #endif

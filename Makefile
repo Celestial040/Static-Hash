@@ -6,9 +6,8 @@ SRCS := main.c \
         utils/status.c \
         utils/vector/landing_spot.c\
         utils/sort/median.c\
-        utils/sort/descending/most_collide.c\
-        utils/sort/descending/keywords_length.c\
-        utils/grouping/keywords_length.c
+        utils/grouping/keywords_length.c \
+        utils/grouping/selected_column.c
 
 HEADERS := $(wildcard include/*.h include/*/*.h)
 INC_FLAGS := -Iinclude
