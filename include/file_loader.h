@@ -10,6 +10,11 @@ typedef struct FileString {
     size_t length;
 } FileString;
 
-Status load_file_to_memory(const char *filename, FileString *output);
+typedef struct OptionalFileString {
+    Status status;
+    FileString filestring;
+}OptionalFileString;
+
+OptionalFileString load_file_to_memory(const char *filename);
 
 #endif

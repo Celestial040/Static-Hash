@@ -16,6 +16,18 @@ enum {
     KEY_VALUE_PAIR
 };
 
+typedef struct OptionalParseHeader {
+    size_t index_position;
+    size_t line_count;
+    Status status;
+    MappingMode mapping_mode;
+}OptionalParseHeader;
+
+typedef struct TextLine {
+    size_t start;
+    size_t length;
+}TextLine;
+
 void print_keyword_data(KeywordData *data) {
     size_t i, j = 0;
 
@@ -63,84 +75,189 @@ void print_keyword_data_details(KeywordData *data) {
 
 }
 
-Status header_parse(const FileString *filestring, size_t *line_count, MappingMode *mapping_mode) {
-    TokenPointer tokenpointer;
+TextLine find_next_endline(FileString filestring, size_t current_index){
+    TextLine result = {0,0};
+    size_t index = current_index;
+    for (; index < filestring.length; index++) {
+        if (filestring.start[index] == '\n') {
+            break;
+        }
+    }
+    result.length = index;
+    for (index = current_index; index > 0; index--) {
+        if (filestring.start[index] == '\n') {
+            break;
+        }
+    }
+    if (index == 0) {
+        result.start = 0;
+        return result;
+    }
+    result.start = index+1;
+    return result;
 
-    tokenpointer = lexer_scan(filestring);
+}
+
+OptionalParseHeader parse_header(const FileString filestring, const char *filename) {
+    OptionalParseHeader result = {0,0,0,KEY_ENUMERATION};
+    TextLine text_line = {NO_ERROR, 0};
+    TokenPointer tokenpointer = {0,0,TOKEN_UNKNOWN};
+    MappingMode mapping_mode = KEY_ENUMERATION;
+    size_t index_position = 0;
+    size_t line_count = 0;
+
+    tokenpointer = lexer_scan(filestring,index_position);
+
+/*     printf("%ld , %ld, %d \n", tokenpointer.start, tokenpointer.len, tokenpointer.token); */
 
     if (tokenpointer.token != TOKEN_OPEN_CURLY_BRACKET) {
-        return MISMATCH_EXPECTATION;
+        text_line = find_next_endline(filestring, index_position);
+        fprintf(stderr, "%s:%ld:%ld Error '{' expected \n", filename, line_count, index_position);
+        fprintf(stderr, "|   %.*s\n", (int)(text_line.length), filestring.start+ text_line.start);
+        fprintf(stderr, "|   %*s^\n", (int)(index_position - text_line.start), "");
+        result.status = MISMATCH_EXPECTATION;
+        return result;
     }
 
-    tokenpointer = lexer_scan(filestring);
+    index_position = tokenpointer.start + tokenpointer.len;
+
+    tokenpointer = lexer_scan(filestring,index_position);
 
     if (tokenpointer.token != TOKEN_IDENTIFIER) {
-        return MISMATCH_EXPECTATION;
+        text_line = find_next_endline(filestring, index_position);
+        fprintf(stderr, "%s:%ld:%ld Error identifier expected \n", filename, line_count, index_position);
+        fprintf(stderr, "|   %.*s\n", (int)(text_line.length), filestring.start+ text_line.start);
+        fprintf(stderr, "|   %*s^\n", (int)(index_position - text_line.start), "");
+        result.status = MISMATCH_EXPECTATION;
+        return result;
     }
 
-    if (strncmp(filestring->start + tokenpointer.start, "enum", tokenpointer.len) == 0) {
-        *mapping_mode = KEY_ENUMERATION;
-    } else if (strncmp(filestring->start + tokenpointer.start, "key", tokenpointer.len) == 0) {
-        *mapping_mode = KEY_VALUE_PAIR;
+    if (tokenpointer.len == 4 && memcmp(filestring.start + tokenpointer.start, "enum", tokenpointer.len) == 0) {
+        mapping_mode = KEY_ENUMERATION;
+    } else if (tokenpointer.len == 3 && memcmp(filestring.start + tokenpointer.start, "key", tokenpointer.len) == 0) {
+        mapping_mode = KEY_VALUE_PAIR;
     } else {
-        return MISMATCH_EXPECTATION;
+        text_line = find_next_endline(filestring, index_position);
+        fprintf(stderr, "%s:%ld:%ld Error expected identifier 'enum' or 'key' \n", filename, line_count, index_position);
+        fprintf(stderr, "|   %.*s\n", (int)(text_line.length), filestring.start+ text_line.start);
+        fprintf(stderr, "|   %*s^\n", (int)(index_position - text_line.start), "");
+        result.status = MISMATCH_EXPECTATION;
+        return result;
     }
 
-    tokenpointer = lexer_scan(filestring);
+    index_position = tokenpointer.start + tokenpointer.len;
+
+    tokenpointer = lexer_scan(filestring,index_position);
 
     if (tokenpointer.token != TOKEN_CLOSE_CURLY_BRACKET) {
-        return MISMATCH_EXPECTATION;
+        text_line = find_next_endline(filestring, index_position);
+        fprintf(stderr, "%s:%ld:%ld Error '}' expected \n", filename, line_count, index_position);
+        fprintf(stderr, "|   %.*s\n", (int)(text_line.length), filestring.start+ text_line.start);
+        fprintf(stderr, "|   %*s^\n", (int)(index_position - text_line.start), "");
+        result.status = MISMATCH_EXPECTATION;
+        return result;
     }
 
-    tokenpointer = lexer_scan(filestring);
+    index_position = tokenpointer.start + tokenpointer.len;
+
+    tokenpointer = lexer_scan(filestring,index_position);
 
     if (mapping_mode == KEY_ENUMERATION) {
         if (tokenpointer.token != TOKEN_ENDLINE) {
-            return MISMATCH_EXPECTATION;
+            text_line = find_next_endline(filestring, index_position);
+            fprintf(stderr, "%s:%ld:%ld Error newline expected \n", filename, line_count, index_position);
+            fprintf(stderr, "|   %.*s\n", (int)(text_line.length), filestring.start+ text_line.start);
+            fprintf(stderr, "|   %*s^\n", (int)(index_position - text_line.start), "");
+            result.status = MISMATCH_EXPECTATION;
+            return result;
         }
 
-        *line_count += 1;
-        return NO_ERROR;
+        line_count += 1;
+        result.line_count = line_count;
+        result.index_position = index_position;
+        result.mapping_mode = mapping_mode;
+        return result;
     }
 
     if (tokenpointer.token != TOKEN_COMMA) {
-        return MISMATCH_EXPECTATION;
+        text_line = find_next_endline(filestring, index_position);
+        fprintf(stderr, "%s:%ld:%ld Error ',' expected \n", filename, line_count, index_position);
+        fprintf(stderr, "|   %.*s\n", (int)(text_line.length), filestring.start+ text_line.start);
+        fprintf(stderr, "|   %*s^\n", (int)(index_position - text_line.start), "");
+        result.status = MISMATCH_EXPECTATION;
+        return result;
     }
 
-    tokenpointer = lexer_scan(filestring);
+    index_position = tokenpointer.start + tokenpointer.len;
+
+    tokenpointer = lexer_scan(filestring,index_position);
 
     if (tokenpointer.token != TOKEN_OPEN_CURLY_BRACKET) {
-        return MISMATCH_EXPECTATION;
+        text_line = find_next_endline(filestring, index_position);
+        fprintf(stderr, "%s:%ld:%ld Error '{' expected \n", filename, line_count, index_position);
+        fprintf(stderr, "|   %.*s\n", (int)(text_line.length), filestring.start+ text_line.start);
+        fprintf(stderr, "|   %*s^\n", (int)(index_position - text_line.start), "");
+        result.status = MISMATCH_EXPECTATION;
+        return result;
     }
 
-    tokenpointer = lexer_scan(filestring);
+    index_position = tokenpointer.start + tokenpointer.len;
+
+    tokenpointer = lexer_scan(filestring,index_position);
 
     if (tokenpointer.token != TOKEN_IDENTIFIER) {
-        return MISMATCH_EXPECTATION;
+        text_line = find_next_endline(filestring, index_position);
+        fprintf(stderr, "%s:%ld:%ld Error identifier expected \n", filename, line_count, index_position);
+        fprintf(stderr, "|   %.*s\n", (int)(text_line.length), filestring.start+ text_line.start);
+        fprintf(stderr, "|   %*s^\n", (int)(index_position - text_line.start), "");
+        result.status = MISMATCH_EXPECTATION;
+        return result;
     }
 
-    if (strncmp(filestring->start + tokenpointer.start, "value", tokenpointer.len) != 0) {
-        return MISMATCH_EXPECTATION;
+    if (tokenpointer.len != 5 || memcmp(filestring.start + tokenpointer.start, "value", tokenpointer.len) != 0) {
+        text_line = find_next_endline(filestring, index_position);
+        fprintf(stderr, "%s:%ld:%ld Error expected identifier 'value' \n", filename, line_count, index_position);
+        fprintf(stderr, "|   %.*s\n", (int)(text_line.length), filestring.start + text_line.start);
+        fprintf(stderr, "|   %*s^\n", (int)(index_position - text_line.start), "");
+        result.status = MISMATCH_EXPECTATION;
+        return result;
     }
 
-    tokenpointer = lexer_scan(filestring);
+    index_position = tokenpointer.start + tokenpointer.len;
+
+    tokenpointer = lexer_scan(filestring,index_position);
 
     if (tokenpointer.token != TOKEN_CLOSE_CURLY_BRACKET) {
-        return MISMATCH_EXPECTATION;
+        text_line = find_next_endline(filestring, index_position);
+        fprintf(stderr, "%s:%ld:%ld Error '{' expected \n", filename, line_count, index_position);
+        fprintf(stderr, "|   %.*s\n", (int)(text_line.length), filestring.start+ text_line.start);
+        fprintf(stderr, "|   %*s^\n", (int)(index_position - text_line.start), "");
+        result.status = MISMATCH_EXPECTATION;
+        return result;
     }
 
-    tokenpointer = lexer_scan(filestring);
+    index_position = tokenpointer.start + tokenpointer.len;
+
+    tokenpointer = lexer_scan(filestring,index_position);
 
     if (tokenpointer.token != TOKEN_ENDLINE) {
-        return MISMATCH_EXPECTATION;
+        text_line = find_next_endline(filestring, index_position);
+        fprintf(stderr, "%s:%ld:%ld Error newline expected \n", filename, line_count, index_position);
+        fprintf(stderr, "|   %.*s\n", (int)(text_line.length), filestring.start+ text_line.start);
+        fprintf(stderr, "|   %*s^\n", (int)(index_position - text_line.start), "");
+        result.status = MISMATCH_EXPECTATION;
+        return result;
     }
 
-    *line_count += 1;
+    line_count += 1;
 
-    return NO_ERROR;
+    result.line_count = line_count;
+    result.index_position = index_position;
+    result.mapping_mode = mapping_mode;
+    return result;
 }
 
-Status body_parse_key_value(const FileString *filestring, size_t *line_count, KeywordData *result_output) {
+/* Status body_parse_key_value(const FileString *filestring, size_t *line_count, KeywordData *result_output) {
     Status converting_string_status = NO_ERROR;
 
     TokenPointer tokenpointer;
@@ -491,18 +608,18 @@ Status column_selection(KeywordData *data) {
     return NO_ERROR;
 }
 
+ */
+OptionalParser parser_start(const FileString filestring, const char *filename) {
+    OptionalParser result = {NO_ERROR};
+    OptionalParseHeader parse_header_result = {0,0,0,KEY_ENUMERATION};
 
-Status parser_start(const FileString *filestring) {
-    Status status = NO_ERROR;
-    MappingMode mapping_mode = KEY_ENUMERATION;
-    size_t line_count = 0;
+    parse_header_result = parse_header(filestring, filename);
+    if (parse_header_result.status != NO_ERROR) {
+        result.status = parse_header_result.status;
+        return result;
+    }
 
-    KeywordData keyword_data = {NULL,NULL,NULL,0,0};
-
-    status = header_parse(filestring, &line_count, &mapping_mode);
-    if (status != NO_ERROR) {return status;}
-
-    if (mapping_mode == KEY_VALUE_PAIR) {
+/*     if (mapping_mode == KEY_VALUE_PAIR) {
         status = body_parse_key_value(filestring, &line_count, &keyword_data);
         if (status != NO_ERROR) {return status;}
     } else {
@@ -510,7 +627,7 @@ Status parser_start(const FileString *filestring) {
     }
 
     status = column_selection(&keyword_data);
-    if (status != NO_ERROR) {return status;}
+    if (status != NO_ERROR) {return status;} */
 
-    return status;
+    return result;
 }

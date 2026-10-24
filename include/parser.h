@@ -13,8 +13,12 @@ typedef struct KeywordData {
     unsigned char longest_keyword_len;
 } KeywordData;
 
+typedef struct OptionalParser {
+    Status status;
+}OptionalParser;
 
-Status parser_start(const FileString *filestring);
+
+OptionalParser parser_start(const FileString filestring, const char *filename);
 void print_keyword_data(KeywordData *data);
 void print_keyword_data_details(KeywordData *data);
 

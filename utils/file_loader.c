@@ -4,43 +4,51 @@
 #include "status.h"
 #include "file_loader.h"
 
-Status load_file_to_memory(const char *filename, FileString *output) {
-    FILE *file_pointer;
-    char *buffer;
-    long file_len;
-    size_t length;
+OptionalFileString load_file_to_memory(const char *filename) {
+    OptionalFileString result = {NO_ERROR, {NULL, 0}};
+
+    FILE *file_pointer = NULL;
+    char *buffer = NULL;
+    long file_length = 0;
+    size_t len = 0;
 
     file_pointer = fopen(filename, "rb");
     if (file_pointer == NULL) {
-        return FILE_NOT_FOUND;
+        result.status = FILE_NOT_FOUND;
+        return result;
     }
 
     fseek(file_pointer, 0, SEEK_END);
-    file_len = ftell(file_pointer);
+    file_length = ftell(file_pointer);
     fseek(file_pointer, 0, SEEK_SET);
 
-    if (file_len < 0) {
+    if (file_length < 0) {
         fclose(file_pointer);
-        return READ_ERROR;
+
+        result.status = READ_ERROR;
+        return result;
     }
 
-    length = (size_t) file_len;
+    len = (size_t) file_length;
 
-    buffer = (char*) malloc(sizeof(char) * (length+1));
+    buffer = (char*) malloc(sizeof(char) * (len+1));
     if (buffer == NULL) {
         fclose(file_pointer);
-        return ALLOCATION_ERROR;
+
+        result.status = ALLOCATION_ERROR;
+        return result;
     }
 
-    fread(buffer, 1, length, file_pointer);
-    buffer[length] = '\0';
+    fread(buffer, 1, len, file_pointer);
+    buffer[len] = '\0';
 
-    output->start = buffer;
-    output->length = length;
+    result.status = NO_ERROR;
+    result.filestring.start = buffer;
+    result.filestring.length = len;
 
     fclose(file_pointer);
 
-    return NO_ERROR;
+    return result;
 }
 
 Status free_file_string(FileString *filestring) {

@@ -3,18 +3,20 @@
 #include "status.h"
 
 int main(void) {
-    Status status = NO_ERROR;
-    FileString test_file;
+    OptionalFileString input_file = {NO_ERROR, {NULL, 0}};
+    OptionalParser parser_result = {NO_ERROR};
 
-    status = load_file_to_memory("test_text/input.txt", &test_file);
-    if (status != NO_ERROR) {
-        status_print(status);
+    const char *filename = "test_text/input.txt";
+
+    input_file = load_file_to_memory(filename);
+    if (input_file.status != NO_ERROR) {
+        status_print(input_file.status);
         return 1;
     }
 
-    status = parser_start(&test_file);
-    if (status != NO_ERROR) {
-        status_print(status);
+    parser_result = parser_start(input_file.filestring, filename);
+    if (parser_result.status != NO_ERROR) {
+        status_print(parser_result.status);
         return 1;
     }
 

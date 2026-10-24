@@ -39,84 +39,71 @@ Token token_symbol_enum_check(const char target) {
     }
 }
 
-static TypeMode prev_mode, current_mode = TAB_SPACE;
-static size_t index, trail = 0;
-static TokenPointer tokenpointer;
+TokenPointer lexer_scan(const FileString file_string, size_t index_position){
+    TypeMode prev_mode, current_mode = TAB_SPACE;
+    size_t head = index_position;
+    size_t tail = index_position;
+    TokenPointer tokenpointer = {0,0,TOKEN_UNKNOWN};
 
+    while (head < file_string.length) {
+        current_mode = type_check(file_string.start[head]);
 
-void set_lexer_index(size_t checkpoint) {
-    index = trail = checkpoint;
-    prev_mode = current_mode = TAB_SPACE;
-}
-
-size_t get_lexer_tail(void) {
-    return trail;
-}
-
-TokenPointer lexer_scan(const FileString *file_string) {
-    tokenpointer.token = TOKEN_UNKNOWN;
-    tokenpointer.start = 0;
-    tokenpointer.len = 0;
-
-    while (index < file_string->length) {
-        current_mode = type_check(file_string->start[index]);
-
-        if (prev_mode == NUMERIC_LITERAL && is_numeric(file_string->start[index])) { current_mode = NUMERIC_LITERAL;}
+        if (prev_mode == NUMERIC_LITERAL && is_numeric(file_string.start[head])) { current_mode = NUMERIC_LITERAL;}
 
         if (current_mode != prev_mode || (current_mode == SYMBOL && prev_mode == SYMBOL)) {
 
-            if (current_mode == ALPHANUMERIC && is_numeric(file_string->start[index])) {
+            if (current_mode == ALPHANUMERIC && is_numeric(file_string.start[head])) {
                 current_mode = NUMERIC_LITERAL;
             }
 
             switch (prev_mode) {
                 case TAB_SPACE:
-                    trail = index;
+                    tail = head;
                     prev_mode = current_mode;
-                    index++;
+                    head++;
                     continue;
 
                 case ALPHANUMERIC:
                     tokenpointer.token = TOKEN_IDENTIFIER;
-                    tokenpointer.start = trail;
-                    tokenpointer.len = index - trail;
+                    tokenpointer.start = tail;
+                    tokenpointer.len = head - tail;
 
-                    trail = index;
+                    tail = head;
                     prev_mode = current_mode;
-                    index++;
+                    head++;
 
                     return tokenpointer;
 
                 case SYMBOL:
-                    tokenpointer.token = token_symbol_enum_check(file_string->start[trail]);
-                    tokenpointer.start = trail;
-                    tokenpointer.len = index - trail;
+                    tokenpointer.token = token_symbol_enum_check(file_string.start[tail]);
+                    tokenpointer.start = tail;
+                    tokenpointer.len = head - tail;
 
-                    trail = index;
+                    tail = head;
                     prev_mode = current_mode;
-                    index++;
+                    head++;
 
                     return tokenpointer;
 
                 case NUMERIC_LITERAL:
                     tokenpointer.token = TOKEN_NUMERIC_LITERAL;
-                    tokenpointer.start = trail;
-                    tokenpointer.len = index - trail;
+                    tokenpointer.start = tail;
+                    tokenpointer.len = head - tail;
 
-                    trail = index;
+                    tail = head;
                     prev_mode = current_mode;
-                    index++;
+                    head++;
 
                     return tokenpointer;
 
                 case ENDLINE:
                     tokenpointer.token = TOKEN_ENDLINE;
-                    tokenpointer.start = trail;
-                    tokenpointer.len = index - trail;
+                    tokenpointer.start = tail;
+                    tokenpointer.len = head - tail;
 
-                    trail = index;
+                    tail = head;
                     prev_mode = current_mode;
-                    index++;
+                    head++;
 
                     return tokenpointer;
 
@@ -124,10 +111,10 @@ TokenPointer lexer_scan(const FileString *file_string) {
                     break;
             }
         }
-        index++;
+        head++;
     }
 
-    if (index >= file_string->length) {tokenpointer.token = TOKEN_EOF;}
+    if (head >= file_string.length) {tokenpointer.token = TOKEN_EOF;}
 
     return tokenpointer;
 }
