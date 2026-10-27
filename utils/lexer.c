@@ -39,8 +39,9 @@ Token token_symbol_enum_check(const char target) {
     }
 }
 
-TokenPointer lexer_scan(const FileString file_string, size_t index_position){
-    TypeMode prev_mode, current_mode = TAB_SPACE;
+TokenPointer lexer_scan(const FileString file_string, const size_t index_position){
+    TypeMode prev_mode = TAB_SPACE;
+    TypeMode current_mode = TAB_SPACE;
     size_t head = index_position;
     size_t tail = index_position;
     TokenPointer tokenpointer = {0,0,TOKEN_UNKNOWN};

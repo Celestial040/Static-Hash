@@ -38,35 +38,21 @@ typedef struct TextLine {
     size_t length;
 }TextLine;
 
-void print_keyword_data(KeywordData *data) {
-    size_t i, j = 0;
+void print_keyword_data(const KeywordData *data) {
+    unsigned char i = 0;
 
     for (i = 0; i < data->keyword_count; i++) {
-
-        for (j = 0; j < data->longest_keyword_len; j++) {
-            if (data->keywords[i * data->longest_keyword_len + j] == 0) {
-                break;
-            }
-            printf("%c ",data->keywords[i * data->longest_keyword_len + j]);
-        }
-        printf("\n");
+        printf("%.*s \n", data->keywords_length[i], data->keywords + i * data->longest_keyword_len);
     }
 
     printf("\n");
 }
 
-void print_keyword_data_details(KeywordData *data) {
-    size_t i, j = 0;
+void print_keyword_data_details(const KeywordData *data) {
+    unsigned char i = 0;
 
     for (i = 0; i < data->keyword_count; i++) {
-
-        for (j = 0; j < data->longest_keyword_len; j++) {
-            if (data->keywords[i * data->longest_keyword_len + j] == 0) {
-                break;
-            }
-            printf("%c ",data->keywords[i * data->longest_keyword_len + j]);
-        }
-        printf("\n");
+        printf("%.*s \n", data->keywords_length[i], data->keywords + i * data->longest_keyword_len);
     }
 
     printf("\n");
@@ -111,7 +97,7 @@ OptionalValueConverter value_converter(const FileString filestring, const size_t
     return result;
 }
 
-TextLine find_next_endline(FileString filestring, size_t current_index){
+TextLine find_next_endline(const FileString filestring, const size_t current_index){
     TextLine result = {0,0};
     size_t index = current_index;
     for (; index < filestring.length; index++) {
@@ -198,6 +184,7 @@ OptionalParseHeader parse_header(const FileString filestring, const char *filena
 
 
 
+
     index_position = tokenpointer.start + tokenpointer.len;
 
     tokenpointer = lexer_scan(filestring,index_position);
@@ -219,6 +206,8 @@ OptionalParseHeader parse_header(const FileString filestring, const char *filena
         return result;
     }
 
+
+
     if (tokenpointer.token != TOKEN_COMMA) {
         text_line = find_next_endline(filestring, index_position);
         fprintf(stderr, "%s:%ld:%ld Error ',' expected \n", filename, line_count, index_position);
@@ -235,7 +224,6 @@ OptionalParseHeader parse_header(const FileString filestring, const char *filena
     tokenpointer = lexer_scan(filestring,index_position);
 
 
-    printf("%ld , %ld, %d \n", tokenpointer.start, tokenpointer.len, tokenpointer.token);
 
 
     if (tokenpointer.token != TOKEN_OPEN_CURLY_BRACKET) {
@@ -296,6 +284,8 @@ OptionalParseHeader parse_header(const FileString filestring, const char *filena
         return result;
     }
 
+    index_position = tokenpointer.start + tokenpointer.len;
+
     line_count += 1;
 
     result.line_count = line_count;
@@ -321,7 +311,6 @@ OptionalParseKeyValue body_parse_key_value(const FileString filestring, const ch
         tokenpointer = lexer_scan(filestring,index_position);
 
         if (data.keyword_count > 0 && tokenpointer.token == TOKEN_EOF) {
-            line_count += 1;
             break;
         }
 
@@ -334,7 +323,7 @@ OptionalParseKeyValue body_parse_key_value(const FileString filestring, const ch
             return result;
         }
 
-        if (data.keyword_count == 255) {
+        if (data.keyword_count >= 255) {
             text_line = find_next_endline(filestring, index_position);
             fprintf(stderr, "%s:%ld:%ld Error keyword limit exceeded (max keywords count : 255) \n", filename, line_count, index_position);
             fprintf(stderr, "|   %.*s\n", (int)(text_line.length), filestring.start+ text_line.start);
@@ -402,6 +391,10 @@ OptionalParseKeyValue body_parse_key_value(const FileString filestring, const ch
         index_position = tokenpointer.start + tokenpointer.len;
         line_count += 1;
         data.keyword_count++;
+
+        if (tokenpointer.token == TOKEN_EOF) {
+            break;
+        }
     }
 
     data.keywords = (char *) calloc(data.keyword_count * data.longest_keyword_len , sizeof(char));
@@ -421,7 +414,6 @@ OptionalParseKeyValue body_parse_key_value(const FileString filestring, const ch
         result.status = ALLOCATION_ERROR;
         return result;
     }
-
 
     index_position = start_index;
     line_count = start_line_count;
@@ -729,8 +721,7 @@ OptionalParser parser_start(const FileString filestring, const char *filename) {
 
     }
 
-    print_keyword_data_details(&parse_key_value_result.data);
-
+/*     print_keyword_data_details(&parse_key_value_result.data); */
 /*     status = column_selection(&keyword_data);
     if (status != NO_ERROR) {return status;} */
 

@@ -20,7 +20,7 @@ typedef struct OptionalParser {
 
 
 OptionalParser parser_start(const FileString filestring, const char *filename);
-void print_keyword_data(KeywordData *data);
-void print_keyword_data_details(KeywordData *data);
+void print_keyword_data(const KeywordData *data);
+void print_keyword_data_details(const KeywordData *data);
 
 #endif

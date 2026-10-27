@@ -1,6 +1,6 @@
 {key},{value}
-world  , 0
-wow  , 1
+world , 0
+wow , 1
 war , 2
 want , 3
 way  , 4
