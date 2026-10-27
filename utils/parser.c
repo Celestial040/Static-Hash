@@ -391,10 +391,6 @@ OptionalParseKeyValue body_parse_key_value(const FileString filestring, const ch
         index_position = tokenpointer.start + tokenpointer.len;
         line_count += 1;
         data.keyword_count++;
-
-        if (tokenpointer.token == TOKEN_EOF) {
-            break;
-        }
     }
 
     data.keywords = (char *) calloc(data.keyword_count * data.longest_keyword_len , sizeof(char));
@@ -721,7 +717,7 @@ OptionalParser parser_start(const FileString filestring, const char *filename) {
 
     }
 
-/*     print_keyword_data_details(&parse_key_value_result.data); */
+    print_keyword_data_details(&parse_key_value_result.data);
 /*     status = column_selection(&keyword_data);
     if (status != NO_ERROR) {return status;} */
 

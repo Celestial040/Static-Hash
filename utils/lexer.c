@@ -115,7 +115,12 @@ TokenPointer lexer_scan(const FileString file_string, const size_t index_positio
         head++;
     }
 
-    if (head >= file_string.length) {tokenpointer.token = TOKEN_EOF;}
+    if (head >= file_string.length) {
+        tokenpointer.token = TOKEN_EOF;
+        tokenpointer.start = file_string.length;
+        tokenpointer.len = 0;
+    };
+
 
     return tokenpointer;
 }
