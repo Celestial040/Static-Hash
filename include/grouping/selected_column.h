@@ -4,7 +4,18 @@
 #include "status.h"
 #include "parser.h"
 
-Status grouping_by_selected_column(KeywordData *data, unsigned char selected_column, unsigned char *uppercase_start, unsigned char *lowercase_start,
-                                   unsigned char start, unsigned char length);
+typedef struct Internal_Grouping_BySelectedColumn {
+    Status status;
+    char *keywords;
+    unsigned char *keywords_length;
+    unsigned short *values_pair;
+}Internal_Grouping_BySelectedColumn;
+
+Internal_Grouping_BySelectedColumn grouping_by_selected_column( const KeywordData data,
+                                                                const unsigned char selected_column,
+                                                                const unsigned char *uppercase_start,
+                                                                const unsigned char *lowercase_start,
+                                                                const unsigned char start,
+                                                                const unsigned char length);
 
 #endif

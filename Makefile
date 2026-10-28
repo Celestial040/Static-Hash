@@ -4,7 +4,7 @@ SRCS := main.c \
         utils/lexer.c \
         utils/parser.c \
         utils/status.c \
-        utils/vector/landing_spot.c\
+        utils/vector/best_columns.c\
         utils/sort/median.c\
         utils/grouping/keywords_length.c \
         utils/grouping/selected_column.c

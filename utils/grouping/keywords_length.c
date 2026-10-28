@@ -19,7 +19,7 @@ Internal_Grouping_ByLength grouping_by_keywords_length(const KeywordData data, c
     unsigned char target_index = 0;
     unsigned char i = 0;
 
-    keywords = (char *) calloc(data.keyword_count,sizeof(char));
+    keywords = (char *) calloc(data.keyword_count * data.longest_keyword_len,sizeof(char));
     if (keywords == NULL) {
         result.status = ALLOCATION_ERROR;
         return result;
