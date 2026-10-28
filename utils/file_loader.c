@@ -4,8 +4,8 @@
 #include "status.h"
 #include "file_loader.h"
 
-OptionalFileString load_file_to_memory(const char *filename) {
-    OptionalFileString result = {NO_ERROR, {NULL, 0}};
+FileString load_file_to_memory(const char *filename) {
+    FileString result = {NO_ERROR, NULL, 0};
 
     FILE *file_pointer = NULL;
     char *buffer = NULL;
@@ -43,8 +43,8 @@ OptionalFileString load_file_to_memory(const char *filename) {
     buffer[len] = '\0';
 
     result.status = NO_ERROR;
-    result.filestring.start = buffer;
-    result.filestring.length = len;
+    result.start = buffer;
+    result.length = len;
 
     fclose(file_pointer);
 

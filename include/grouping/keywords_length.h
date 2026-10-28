@@ -4,11 +4,11 @@
 #include "status.h"
 #include "parser.h"
 
-typedef struct OptionalInternalGroupingByLength {
+typedef struct Internal_Grouping_ByLength {
     Status status;
     KeywordData data;
-} OptionalInternalGroupingByLength;
+} Internal_Grouping_ByLength;
 
-OptionalInternalGroupingByLength grouping_by_keywords_length(const KeywordData data, const unsigned char *grouping_start);
+Internal_Grouping_ByLength grouping_by_keywords_length(const KeywordData data, const unsigned char *grouping_start);
 
 #endif

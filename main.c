@@ -3,8 +3,8 @@
 #include "status.h"
 
 int main(void) {
-    OptionalFileString input_file = {NO_ERROR, {NULL, 0}};
-    OptionalParser parser_result = {NO_ERROR};
+    FileString input_file = {NO_ERROR, NULL, 0};
+    Parser parser_result = {NO_ERROR};
 
     const char *filename = "test_text/input.txt";
 
@@ -14,7 +14,7 @@ int main(void) {
         return 1;
     }
 
-    parser_result = parser_start(input_file.filestring, filename);
+    parser_result = parser_start(input_file, filename);
     if (parser_result.status != NO_ERROR) {
         status_print(parser_result.status);
         return 1;

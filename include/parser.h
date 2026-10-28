@@ -14,12 +14,12 @@ typedef struct KeywordData {
     unsigned char shortest_keyword_len;
 } KeywordData;
 
-typedef struct OptionalParser {
+typedef struct Parser {
     Status status;
-}OptionalParser;
+}Parser;
 
 
-OptionalParser parser_start(const FileString filestring, const char *filename);
+Parser parser_start(const FileString filestring, const char *filename);
 void print_keyword_data(const KeywordData data);
 void print_keyword_data_details(const KeywordData data);
 

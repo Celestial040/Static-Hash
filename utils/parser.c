@@ -2,11 +2,11 @@
 #include "file_loader.h"
 #include "lexer.h"
 #include "status.h"
+#include "char_manip.h"
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "char_manip.h"
 #include "grouping/keywords_length.h"
 #include "grouping/selected_column.h"
 
@@ -16,39 +16,52 @@ enum {
     KEY_VALUE_PAIR
 };
 
-typedef struct OptionalParseHeader {
+
+typedef struct Parse_Header {
     size_t index_position;
     size_t line_count;
     Status status;
     MappingMode mapping_mode;
-}OptionalParseHeader;
+}Parse_Header;
 
-typedef struct OptionalParseKeyValue {
+typedef struct Parse_KeyValue {
     KeywordData data;
     Status status;
-}OptionalParseKeyValue;
+}Parse_KeyValue;
 
-typedef struct OptionalValueConverter {
+typedef struct Value_Converter {
     Status status;
     unsigned short value;
-} OptionalValueConverter;
+} Value_Converter;
 
 typedef struct TextLine {
     size_t start;
     size_t length;
 }TextLine;
 
-typedef struct OptionalColumnSelection {
+typedef struct Column_Selection {
     Status status;
     KeywordData data;
-} OptionalColumnSelection;
+} Column_Selection;
 
-typedef struct OptionalGroupingByLength {
+typedef struct Grouping_ByLength {
     Status status;
     KeywordData data;
     unsigned char *grouping_count;
     unsigned char *grouping_start_index;
-} OptionalGroupingByLength;
+} Grouping_ByLength;
+
+typedef struct Internal_Column_Selection {
+    Status status;
+    unsigned char selected_column;
+}Internal_Column_Selection;
+
+typedef struct Grouping_BySelectedColumn {
+    Status status;
+    KeywordData data;
+    unsigned char *grouping_count;
+    unsigned char *grouping_start_index;
+} Grouping_BySelectedColumn;
 
 void free_keyword_data(KeywordData *data) {
     free(data->keywords);
@@ -97,8 +110,8 @@ void print_keyword_data_details(const KeywordData data) {
 
 }
 
-OptionalValueConverter value_converter(const FileString filestring, const size_t start, const size_t length) {
-    OptionalValueConverter result = {NO_ERROR, 0};
+Value_Converter value_converter(const FileString filestring, const size_t start, const size_t length) {
+    Value_Converter result = {NO_ERROR, 0};
     size_t i = 0;
     unsigned short total = 0;
     unsigned short power = 1;
@@ -146,8 +159,8 @@ TextLine find_next_endline(const FileString filestring, const size_t current_ind
 
 }
 
-OptionalParseHeader parse_header(const FileString filestring, const char *filename) {
-    OptionalParseHeader result = {0,0,0,KEY_ENUMERATION};
+Parse_Header parse_header(const FileString filestring, const char *filename) {
+    Parse_Header result = {0,0,0,KEY_ENUMERATION};
     TextLine text_line = {NO_ERROR, 0};
     TokenPointer tokenpointer = {0,0,TOKEN_UNKNOWN};
     MappingMode mapping_mode = KEY_ENUMERATION;
@@ -320,9 +333,9 @@ OptionalParseHeader parse_header(const FileString filestring, const char *filena
     return result;
 }
 
-OptionalParseKeyValue body_parse_key_value(const FileString filestring, const char *filename, const size_t start_index, const size_t start_line_count) {
-    OptionalParseKeyValue result = {{NULL,NULL,NULL,0,0,0}, NO_ERROR};
-    OptionalValueConverter value_convert_result = {NO_ERROR, 0};
+Parse_KeyValue body_parse_key_value(const FileString filestring, const char *filename, const size_t start_index, const size_t start_line_count) {
+    Parse_KeyValue result = {{NULL,NULL,NULL,0,0,0}, NO_ERROR};
+    Value_Converter value_convert_result = {NO_ERROR, 0};
 
     TextLine text_line = {NO_ERROR, 0};
     TokenPointer tokenpointer = {0,0,TOKEN_UNKNOWN};
@@ -477,9 +490,9 @@ OptionalParseKeyValue body_parse_key_value(const FileString filestring, const ch
     return result;
 }
 
-OptionalGroupingByLength row_grouping_by_length(const KeywordData data) {
-    OptionalGroupingByLength result = {NO_ERROR, {NULL, NULL, NULL, 0, 0 ,0}, NULL, NULL};
-    OptionalInternalGroupingByLength internal_result = {NO_ERROR, {NULL, NULL, NULL, 0, 0 ,0}};
+Grouping_ByLength row_grouping_by_length(const KeywordData data) {
+    Grouping_ByLength result = {NO_ERROR, {NULL, NULL, NULL, 0, 0 ,0}, NULL, NULL};
+    Internal_Grouping_ByLength internal_result = {NO_ERROR, {NULL, NULL, NULL, 0, 0 ,0}};
 
     unsigned char i = 0;
     unsigned char *grouping_count = NULL;
@@ -521,36 +534,178 @@ OptionalGroupingByLength row_grouping_by_length(const KeywordData data) {
     return result;
 }
 
-OptionalColumnSelection column_selection(const KeywordData data) {
-    OptionalColumnSelection result = {NO_ERROR, {NULL, NULL, NULL, 0, 0 ,0}};
-    OptionalGroupingByLength length_grouping_result = {NO_ERROR, {NULL, NULL, NULL, 0, 0 ,0}, NULL, NULL};
+/* Status row_grouping_by_selected_column(const KeywordData data, const unsigned char selected_column , const unsigned char *grouping_count, const unsigned char *grouping_start) {
+    Status status = NO_ERROR;
 
-    unsigned short *column_separation_score = NULL;
-    unsigned char *selected_columns = NULL;
+    unsigned char i,j = 0;
+    unsigned char *new_grouping_count = NULL;
+    unsigned char *new_grouping_start = NULL;
+    unsigned char insert_count = 0;
 
-/*     unsigned char uppercase[26] = {0};
+    unsigned char prev = 0;
+    unsigned char offset = 0;
+
+    unsigned char uppercase[26] = {0};
     unsigned char lowercase[26] = {0};
-
-    unsigned char selected_columns_count = 0;
-    unsigned char current_best_column = 0;
-
-    unsigned short temp_total = 0;
+    unsigned char uppercase_start[26] = {0};
+    unsigned char lowercase_start[26] = {0};
 
     char selected_char = 0;
 
-    unsigned char i,j,k = 0; */
-
-    selected_columns = (unsigned char *) malloc(sizeof(unsigned char) * data.longest_keyword_len);
-    if (selected_columns == NULL) {
-        result.status = ALLOCATION_ERROR;
-        return result;
+    new_grouping_count = (unsigned char *) calloc(data->longest_keyword_len + 1, sizeof(unsigned char));
+    if (new_grouping_count == NULL) {
+        return ALLOCATION_ERROR;
     }
 
-    column_separation_score = (unsigned short *) calloc(data.longest_keyword_len, sizeof(unsigned short));
+    grouping_start = (unsigned char *) calloc(data->longest_keyword_len + 1, sizeof(unsigned char));
+    if (grouping_start == NULL) {
+        return ALLOCATION_ERROR;
+    }
+
+
+    for (i = data->keywords_length[0]; i < data->longest_keyword_len + 1; i++) {
+        for (j = grouping_index_start[i]; j < grouping_index_start[i] + grouping_count_array[i]; j++) {
+            selected_char = data->keywords[j * data->longest_keyword_len + selected_column];
+            if (is_lowercase_alphabet(selected_char)) {
+                lowercase[selected_char - 'a']++;
+            } else {
+                uppercase[selected_char - 'A']++;
+            }
+        }
+
+        for (j = 0; j < 26; j++) {
+            if (lowercase[j] > 0) {
+                prev = lowercase[j];
+                lowercase_start[j] = offset;
+                offset += prev;
+            }
+        }
+        for (j = 0; j < 26; j++) {
+            if (uppercase[j] > 0) {
+                prev = uppercase[j];
+                uppercase_start[j] = offset;
+                offset += prev;
+            }
+        }
+
+        for (j = 0; j < 26; j++) {
+            if (lowercase[j] > 0) {
+                printf("%c = %d ", 'a' + j, lowercase[j]);
+                printf("%c = %d\n", 'a' + j, lowercase_start[j]);
+                grouping_count[insert_count] = lowercase[j];
+                grouping_start[insert_count] = lowercase_start[j];
+                insert_count++;
+            }
+        }
+
+        for (j = 0; j < 26; j++) {
+            if (uppercase[j] > 0) {
+                printf("%c = %d ",'A' + j, uppercase[j]);
+                printf("%c = %d\n",'A' + j, uppercase_start[j]);
+                grouping_count[insert_count] = uppercase[j];
+                grouping_start[insert_count] = uppercase_start[j];
+                insert_count++;
+            }
+        }
+
+        if (grouping_count_array[i] > 1) {
+            status = grouping_by_selected_column(data, selected_column, uppercase_start, lowercase_start, grouping_index_start[i], grouping_count_array[i]);
+            if (status != NO_ERROR) {
+                return status;
+            }
+        }
+
+        print_keyword_data(data);
+
+        prev = 0;
+        offset = 0;
+
+        for (j = 0; j < 26; j++) {
+            lowercase[j] = 0;
+            lowercase_start[j] = 0;
+            uppercase[j] = 0;
+            uppercase_start[j] = 0;
+        }
+
+    }
+
+    for (i = 0; i < data->longest_keyword_len + 1; i++) {
+        printf("%d \n", grouping_count[i]);
+    }
+
+    return NO_ERROR;
+} */
+
+Internal_Column_Selection internal_column_selection_length(const KeywordData data, const unsigned char *group_count, const unsigned char *group_start) {
+    Internal_Column_Selection result = {NO_ERROR, 0};
+
+    unsigned char uppercase[26] = {0};
+    unsigned char lowercase[26] = {0};
+
+    unsigned char current_best_column = 0;
+
+    unsigned char *column_separation_score = NULL;
+
+    unsigned short total_combination = 0;
+    char selected_char = 0;
+    unsigned char i,j,k = 0;
+
+    column_separation_score = (unsigned char *) calloc(data.longest_keyword_len, sizeof(unsigned char));
     if (column_separation_score == NULL) {
         result.status = ALLOCATION_ERROR;
         return result;
     }
+
+    for (i = data.shortest_keyword_len; i < data.longest_keyword_len + 1; i++) {
+            total_combination = group_count[i] * (group_count[i] - 1) / 2;
+            for (j = 0; j < i; j++) {
+                column_separation_score[j] += total_combination;
+            }
+
+
+            for (j = 0; j < i; j++) {
+                for (k = group_start[i]; k < group_start[i] + group_count[i] ; k++) {
+                    selected_char = data.keywords[k * data.longest_keyword_len + j];
+                    if (is_lowercase_alphabet(selected_char) == 1) {
+                        lowercase[selected_char - 'a']++;
+                    } else {
+                        uppercase[selected_char - 'A']++;
+                    }
+                }
+
+                for (k = 0; k < 26; k++) {
+                    if (lowercase[k] > 1) {
+                        column_separation_score[j] -= lowercase[k] * (lowercase[k] - 1) / 2;
+                    }
+
+                    if (uppercase[k] > 1) {
+                        column_separation_score[j] -= uppercase[k] * (uppercase[k] - 1) / 2;
+                    }
+
+                    lowercase[k] = 0;
+                    uppercase[k] = 0;
+                }
+
+
+            }
+        }
+
+        for (j = 0; j < data.longest_keyword_len; j++) {
+            if (column_separation_score[j] > column_separation_score[current_best_column]) {
+                current_best_column = j;
+            }
+
+        }
+
+
+    result.selected_column = current_best_column;
+    return result;
+}
+
+Column_Selection column_selection_base_on_length(const KeywordData data) {
+    Column_Selection result = {NO_ERROR, {NULL, NULL, NULL, 0, 0 ,0}};
+    Grouping_ByLength length_grouping_result = {NO_ERROR, {NULL, NULL, NULL, 0, 0 ,0}, NULL, NULL};
+    Internal_Column_Selection selection_result = {NO_ERROR, 0};
 
     length_grouping_result = row_grouping_by_length(data);
     if (length_grouping_result.status != NO_ERROR) {
@@ -560,53 +715,14 @@ OptionalColumnSelection column_selection(const KeywordData data) {
 
     print_keyword_data_details(length_grouping_result.data);
 
-/*     for (i = shortest_keyword_length; i < data->longest_keyword_len + 1; i++) {
-        temp_total = grouping_count_array[i] * (grouping_count_array[i] - 1) / 2;
-        for (j = 0; j < i; j++) {
-            column_separation_score[j] += temp_total;
-        }
-
-        for (j = 0; j < i; j++) {
-            for (k = grouping_index_start[i]; k < grouping_index_start[i]+grouping_count_array[i] ; k++) {
-                selected_char = data->keywords[k * data->longest_keyword_len + j];
-                if (is_lowercase_alphabet(selected_char) == 1) {
-                    lowercase[selected_char - 'a']++;
-                } else {
-                    uppercase[selected_char - 'A']++;
-                }
-            }
-
-            for (k = 0; k < 26; k++) {
-                if (lowercase[k] > 1) {
-                    column_separation_score[j] -= lowercase[k] * (lowercase[k] - 1) / 2;
-                }
-
-                if (uppercase[k] > 1) {
-                    column_separation_score[j] -= uppercase[k] * (uppercase[k] - 1) / 2;
-                }
-
-                lowercase[k] = 0;
-                uppercase[k] = 0;
-            }
-        }
+    selection_result = internal_column_selection_length(length_grouping_result.data, length_grouping_result.grouping_count, length_grouping_result.grouping_start_index);
+    if (selection_result.status != NO_ERROR) {
+        result.status = selection_result.status;
+        return result;
     }
 
-    for (j = 0; j < data->longest_keyword_len; j++) {
-        if (column_separation_score[j] > column_separation_score[current_best_column]) {
-            current_best_column = j;
-        }
-    }
+    printf("%d \n", selection_result.selected_column);
 
-    selected_columns[selected_columns_count] = current_best_column;
-    selected_columns_count++;
-
-
-
-    status = row_grouping_by_selected_column(data, current_best_column, grouping_count_array, grouping_index_start);
-    if (status != NO_ERROR) {
-        return status;
-    }
- */
     return result;
 }
 
@@ -856,11 +972,11 @@ Status column_selection(KeywordData *data) {
 } */
 
 
-OptionalParser parser_start(const FileString filestring, const char *filename) {
-    OptionalParser result = {NO_ERROR};
-    OptionalParseHeader parse_header_result = {0,0,0,KEY_ENUMERATION};
-    OptionalParseKeyValue parse_key_value_result = {{NULL,NULL,NULL,0,0,0}, NO_ERROR};
-    OptionalColumnSelection column_selection_result = {NO_ERROR, {NULL, NULL, NULL, 0, 0 ,0}};
+Parser parser_start(const FileString filestring, const char *filename) {
+    Parser result = {NO_ERROR};
+    Parse_Header parse_header_result = {0,0,0,KEY_ENUMERATION};
+    Parse_KeyValue parse_key_value_result = {{NULL,NULL,NULL,0,0,0}, NO_ERROR};
+    Column_Selection column_selection_result = {NO_ERROR, {NULL, NULL, NULL, 0, 0 ,0}};
 
     parse_header_result = parse_header(filestring, filename);
     if (parse_header_result.status != NO_ERROR) {
@@ -879,7 +995,7 @@ OptionalParser parser_start(const FileString filestring, const char *filename) {
     }
 /*     print_keyword_data_details(parse_key_value_result.data); */
 
-    column_selection_result = column_selection(parse_key_value_result.data);
+    column_selection_result = column_selection_base_on_length(parse_key_value_result.data);
     if (column_selection_result.status != NO_ERROR) {
         result.status = column_selection_result.status;
         return result;

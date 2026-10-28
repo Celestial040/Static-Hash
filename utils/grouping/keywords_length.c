@@ -7,10 +7,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-
-
-OptionalInternalGroupingByLength grouping_by_keywords_length(const KeywordData data, const unsigned char *grouping_start) {
-    OptionalInternalGroupingByLength result = {NO_ERROR, {NULL, NULL, NULL, 0, 0 ,0}};
+Internal_Grouping_ByLength grouping_by_keywords_length(const KeywordData data, const unsigned char *grouping_start) {
+    Internal_Grouping_ByLength result = {NO_ERROR, {NULL, NULL, NULL, 0, 0 ,0}};
 
     char *keywords = NULL;
     unsigned char *keywords_length = NULL;
