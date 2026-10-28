@@ -11,11 +11,13 @@ typedef struct Internal_Grouping_BySelectedColumn {
     unsigned short *values_pair;
 }Internal_Grouping_BySelectedColumn;
 
-Internal_Grouping_BySelectedColumn grouping_by_selected_column( const KeywordData data,
-                                                                const unsigned char selected_column,
-                                                                const unsigned char *uppercase_start,
-                                                                const unsigned char *lowercase_start,
-                                                                const unsigned char start,
-                                                                const unsigned char length);
+Internal_Grouping_BySelectedColumn grouping_by_selected_column(
+    const KeywordData data,
+    const unsigned char selected_column,
+    const unsigned char *uppercase_start,
+    const unsigned char *lowercase_start,
+    const unsigned char start,
+    const unsigned char length
+);
 
 #endif

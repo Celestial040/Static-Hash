@@ -1,8 +1,14 @@
 #include "vector/best_columns.h"
 #include <stdlib.h>
 
-Status allocate_best_columns_vector(BestColumnsVector *vector, size_t size_requested) {
-    BestColumns *temp = (BestColumns*) malloc(sizeof(BestColumns) * size_requested);
+Status allocate_best_columns_vector(
+    BestColumnsVector *vector,
+    size_t size_requested
+) {
+    BestColumns *temp = (BestColumns*) malloc(
+        sizeof(BestColumns) * size_requested
+    );
+
     if (temp == NULL) {return ALLOCATION_ERROR;}
 
     vector->capacity = size_requested;
@@ -12,8 +18,16 @@ Status allocate_best_columns_vector(BestColumnsVector *vector, size_t size_reque
     return NO_ERROR;
 }
 
-Status reallocate_best_columns_vector(BestColumnsVector *vector, size_t size_requested) {
-    BestColumns *temp = (BestColumns*) realloc(vector->array,sizeof(BestColumns) * size_requested);
+Status reallocate_best_columns_vector(
+    BestColumnsVector *vector,
+    size_t size_requested
+) {
+
+    BestColumns *temp = (BestColumns*) realloc(
+        vector->array,
+        sizeof(BestColumns) * size_requested
+    );
+
     if (temp == NULL) {return ALLOCATION_ERROR;}
 
     vector->capacity = size_requested;
@@ -22,9 +36,16 @@ Status reallocate_best_columns_vector(BestColumnsVector *vector, size_t size_req
     return NO_ERROR;
 }
 
-Status insert_best_columns_vector(BestColumnsVector *vector, BestColumns item) {
+Status insert_best_columns_vector(
+    BestColumnsVector *vector,
+    BestColumns item
+) {
     if (vector->size + 1 >=vector->capacity) {
-        Status status = reallocate_best_columns_vector(vector, vector->capacity*2);
+        Status status = reallocate_best_columns_vector(
+            vector,
+            vector->capacity*2
+        );
+
         if (status != NO_ERROR) {return status;}
     }
 
@@ -35,7 +56,9 @@ Status insert_best_columns_vector(BestColumnsVector *vector, BestColumns item) {
 }
 
 Status free_best_columns_vector(BestColumnsVector *vector) {
-    if (vector == NULL || vector->array == NULL) {return NULL_POINTER;}
+    if (vector == NULL || vector->array == NULL) {
+        return NULL_POINTER;
+    }
 
     free(vector->array);
     vector->array = NULL;

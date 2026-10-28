@@ -8,7 +8,10 @@
 #include <string.h>
 
 Internal_Grouping_ByLength grouping_by_keywords_length(const KeywordData data, const unsigned char *grouping_start) {
-    Internal_Grouping_ByLength result = {NO_ERROR, {NULL, NULL, NULL, 0, 0 ,0}};
+    Internal_Grouping_ByLength result = {
+        NO_ERROR,
+        {NULL, NULL, NULL, 0, 0 ,0}
+    };
 
     char *keywords = NULL;
     unsigned char *keywords_length = NULL;
@@ -38,6 +41,7 @@ Internal_Grouping_ByLength grouping_by_keywords_length(const KeywordData data, c
     }
 
     grouping_start_copy = (unsigned char *) calloc(data.longest_keyword_len + 1, sizeof(unsigned char));
+
     if (grouping_start_copy == NULL) {
         result.status = ALLOCATION_ERROR;
         return result;
@@ -49,7 +53,12 @@ Internal_Grouping_ByLength grouping_by_keywords_length(const KeywordData data, c
         current_keyword_length = data.keywords_length[i];
         target_index = grouping_start_copy[current_keyword_length];
 
-        memcpy(keywords + target_index * data.longest_keyword_len, data.keywords + i * data.longest_keyword_len , data.keywords_length[i]);
+        memcpy(
+            keywords + target_index * data.longest_keyword_len,
+            data.keywords + i * data.longest_keyword_len,
+            data.keywords_length[i]
+        );
+
         keywords_length[target_index] = data.keywords_length[i];
         values_pair[target_index] = data.values_pair[i];
 
