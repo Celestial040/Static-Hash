@@ -38,33 +38,59 @@ typedef struct TextLine {
     size_t length;
 }TextLine;
 
-void print_keyword_data(const KeywordData *data) {
+typedef struct OptionalColumnSelection {
+    Status status;
+    KeywordData data;
+} OptionalColumnSelection;
+
+typedef struct OptionalGroupingByLength {
+    Status status;
+    KeywordData data;
+    unsigned char *grouping_count;
+    unsigned char *grouping_start_index;
+} OptionalGroupingByLength;
+
+void free_keyword_data(KeywordData *data) {
+    free(data->keywords);
+    free(data->keywords_length);
+    free(data->values_pair);
+
+    data->keywords = NULL;
+    data->keywords_length = NULL;
+    data->values_pair = NULL;
+
+    data->keyword_count = 0;
+    data->shortest_keyword_len = 0;
+    data->longest_keyword_len = 255;
+}
+
+void print_keyword_data(const KeywordData data) {
     unsigned char i = 0;
 
-    for (i = 0; i < data->keyword_count; i++) {
-        printf("%.*s \n", data->keywords_length[i], data->keywords + i * data->longest_keyword_len);
+    for (i = 0; i < data.keyword_count; i++) {
+        printf("%.*s \n", data.keywords_length[i], data.keywords + i * data.longest_keyword_len);
     }
 
     printf("\n");
 }
 
-void print_keyword_data_details(const KeywordData *data) {
+void print_keyword_data_details(const KeywordData data) {
     unsigned char i = 0;
 
-    for (i = 0; i < data->keyword_count; i++) {
-        printf("%.*s \n", data->keywords_length[i], data->keywords + i * data->longest_keyword_len);
+    for (i = 0; i < data.keyword_count; i++) {
+        printf("%.*s \n", data.keywords_length[i], data.keywords + i * data.longest_keyword_len);
     }
 
     printf("\n");
 
-    for (i = 0; i < data->keyword_count; i++) {
-        printf("%d \n", data->keywords_length[i]);
+    for (i = 0; i < data.keyword_count; i++) {
+        printf("%d \n", data.keywords_length[i]);
     }
 
     printf("\n");
 
-    for (i = 0; i < data->keyword_count; i++) {
-        printf("%d \n", data->values_pair[i]);
+    for (i = 0; i < data.keyword_count; i++) {
+        printf("%d \n", data.values_pair[i]);
     }
 
     printf("\n");
@@ -451,6 +477,140 @@ OptionalParseKeyValue body_parse_key_value(const FileString filestring, const ch
     return result;
 }
 
+OptionalGroupingByLength row_grouping_by_length(const KeywordData data) {
+    OptionalGroupingByLength result = {NO_ERROR, {NULL, NULL, NULL, 0, 0 ,0}, NULL, NULL};
+    OptionalInternalGroupingByLength internal_result = {NO_ERROR, {NULL, NULL, NULL, 0, 0 ,0}};
+
+    unsigned char i = 0;
+    unsigned char *grouping_count = NULL;
+    unsigned char *grouping_start = NULL;
+    unsigned char prev = 0;
+    unsigned char offset = 0;
+
+    grouping_count = (unsigned char *) calloc(data.longest_keyword_len + 1, sizeof(unsigned char));
+    if (grouping_count == NULL) {
+        result.status = ALLOCATION_ERROR;
+        return result;
+    }
+
+    grouping_start = (unsigned char *) calloc(data.longest_keyword_len + 1, sizeof(unsigned char));
+    if (grouping_start == NULL) {
+        result.status = ALLOCATION_ERROR;
+        return result;
+    }
+
+    for (i = 0; i < data.keyword_count; i++) {
+        grouping_count[data.keywords_length[i]]++;
+    }
+
+    for (i = 0; i < data.longest_keyword_len + 1; i++) {
+        prev = grouping_count[i];
+        grouping_start[i] = offset;
+        offset += prev;
+    }
+
+    internal_result = grouping_by_keywords_length(data, grouping_start);
+    if (internal_result.status != NO_ERROR) {
+        result.status = internal_result.status;
+        return result;
+    }
+
+    result.data = internal_result.data;
+    result.grouping_count = grouping_count;
+    result.grouping_start_index = grouping_start;
+    return result;
+}
+
+OptionalColumnSelection column_selection(const KeywordData data) {
+    OptionalColumnSelection result = {NO_ERROR, {NULL, NULL, NULL, 0, 0 ,0}};
+    OptionalGroupingByLength length_grouping_result = {NO_ERROR, {NULL, NULL, NULL, 0, 0 ,0}, NULL, NULL};
+
+    unsigned short *column_separation_score = NULL;
+    unsigned char *selected_columns = NULL;
+
+/*     unsigned char uppercase[26] = {0};
+    unsigned char lowercase[26] = {0};
+
+    unsigned char selected_columns_count = 0;
+    unsigned char current_best_column = 0;
+
+    unsigned short temp_total = 0;
+
+    char selected_char = 0;
+
+    unsigned char i,j,k = 0; */
+
+    selected_columns = (unsigned char *) malloc(sizeof(unsigned char) * data.longest_keyword_len);
+    if (selected_columns == NULL) {
+        result.status = ALLOCATION_ERROR;
+        return result;
+    }
+
+    column_separation_score = (unsigned short *) calloc(data.longest_keyword_len, sizeof(unsigned short));
+    if (column_separation_score == NULL) {
+        result.status = ALLOCATION_ERROR;
+        return result;
+    }
+
+    length_grouping_result = row_grouping_by_length(data);
+    if (length_grouping_result.status != NO_ERROR) {
+        result.status = length_grouping_result.status;
+        return result;
+    }
+
+    print_keyword_data_details(length_grouping_result.data);
+
+/*     for (i = shortest_keyword_length; i < data->longest_keyword_len + 1; i++) {
+        temp_total = grouping_count_array[i] * (grouping_count_array[i] - 1) / 2;
+        for (j = 0; j < i; j++) {
+            column_separation_score[j] += temp_total;
+        }
+
+        for (j = 0; j < i; j++) {
+            for (k = grouping_index_start[i]; k < grouping_index_start[i]+grouping_count_array[i] ; k++) {
+                selected_char = data->keywords[k * data->longest_keyword_len + j];
+                if (is_lowercase_alphabet(selected_char) == 1) {
+                    lowercase[selected_char - 'a']++;
+                } else {
+                    uppercase[selected_char - 'A']++;
+                }
+            }
+
+            for (k = 0; k < 26; k++) {
+                if (lowercase[k] > 1) {
+                    column_separation_score[j] -= lowercase[k] * (lowercase[k] - 1) / 2;
+                }
+
+                if (uppercase[k] > 1) {
+                    column_separation_score[j] -= uppercase[k] * (uppercase[k] - 1) / 2;
+                }
+
+                lowercase[k] = 0;
+                uppercase[k] = 0;
+            }
+        }
+    }
+
+    for (j = 0; j < data->longest_keyword_len; j++) {
+        if (column_separation_score[j] > column_separation_score[current_best_column]) {
+            current_best_column = j;
+        }
+    }
+
+    selected_columns[selected_columns_count] = current_best_column;
+    selected_columns_count++;
+
+
+
+    status = row_grouping_by_selected_column(data, current_best_column, grouping_count_array, grouping_index_start);
+    if (status != NO_ERROR) {
+        return status;
+    }
+ */
+    return result;
+}
+
+
 /* Status row_grouping_by_length(KeywordData *data, unsigned char *grouping_count_array, unsigned char *grouping_index_start) {
     Status status = NO_ERROR;
 
@@ -700,6 +860,7 @@ OptionalParser parser_start(const FileString filestring, const char *filename) {
     OptionalParser result = {NO_ERROR};
     OptionalParseHeader parse_header_result = {0,0,0,KEY_ENUMERATION};
     OptionalParseKeyValue parse_key_value_result = {{NULL,NULL,NULL,0,0,0}, NO_ERROR};
+    OptionalColumnSelection column_selection_result = {NO_ERROR, {NULL, NULL, NULL, 0, 0 ,0}};
 
     parse_header_result = parse_header(filestring, filename);
     if (parse_header_result.status != NO_ERROR) {
@@ -716,10 +877,16 @@ OptionalParser parser_start(const FileString filestring, const char *filename) {
     } else if (parse_header_result.mapping_mode == KEY_ENUMERATION) {
 
     }
+/*     print_keyword_data_details(parse_key_value_result.data); */
 
-    print_keyword_data_details(&parse_key_value_result.data);
-/*     status = column_selection(&keyword_data);
-    if (status != NO_ERROR) {return status;} */
+    column_selection_result = column_selection(parse_key_value_result.data);
+    if (column_selection_result.status != NO_ERROR) {
+        result.status = column_selection_result.status;
+        return result;
+    }
+
+    free_keyword_data(&parse_key_value_result.data);
+
 
     return result;
 }
