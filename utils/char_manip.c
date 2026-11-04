@@ -11,7 +11,9 @@ unsigned char is_lowercase_alphabet(const char target) {
 }
 
 unsigned char is_alphabet(const char target) {
-    return is_uppercase_alphabet(target) || is_lowercase_alphabet(target);
+    return
+    is_uppercase_alphabet(target)
+    ||is_lowercase_alphabet(target);
 }
 
 unsigned char is_numeric(const char target) {
@@ -23,7 +25,10 @@ unsigned char is_alphabet_numeric(const char target) {
 }
 
 unsigned char is_tab_space(const char target) {
-    return target == ' ' || target == 9 ||(target > '\n' && target <= '\r');
+    return
+    target == ' ' ||
+    target == 9 ||
+    (target > '\n' && target <= '\r');
 }
 
 unsigned char is_endline(const char target) {
@@ -34,7 +39,11 @@ unsigned char is_whitespace(const char target) {
     return is_tab_space(target)||is_endline(target);
 }
 
-Status string_to_unsigned_short(const char *src, const size_t src_len, unsigned short *output) {
+Status string_to_unsigned_short(
+    const char *src,
+    const size_t src_len,
+    unsigned short *output
+) {
     size_t i = 0;
     unsigned short total = 0;
     unsigned short power = 1;

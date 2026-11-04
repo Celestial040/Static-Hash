@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdlib.h>
 #include "grouping/keywords_length.h"
 #include "grouping/selected_column.h"
 
@@ -623,23 +624,26 @@ Grouping_BySelectedColumn row_grouping_by_selected_column(
         data.longest_keyword_len * data.keyword_count
     );
 
-    memcpy(new_data.keywords_length,
+    memcpy(
+        new_data.keywords_length,
         data.keywords_length,
         data.keyword_count
     );
 
-    memcpy(new_data.values_pair,
+    memcpy(
+        new_data.values_pair,
         data.values_pair,
-        data.keyword_count
+        data.keyword_count * sizeof(unsigned short)
     );
 
-    new_grouping_count = (unsigned char *) malloc(sizeof(unsigned char) * data.keyword_count);
+
+    new_grouping_count = (unsigned char *) calloc(data.keyword_count, sizeof(unsigned char));
     if (new_grouping_count == NULL) {
         result.status = ALLOCATION_ERROR;
         return result;
     }
 
-    new_grouping_start = (unsigned char *) malloc(sizeof(unsigned char) * data.keyword_count);
+    new_grouping_start = (unsigned char *) calloc(data.keyword_count, sizeof(unsigned char));
     if (new_grouping_start == NULL) {
         result.status = ALLOCATION_ERROR;
         return result;
@@ -649,6 +653,7 @@ Grouping_BySelectedColumn row_grouping_by_selected_column(
 
         for (j = grouping_start[i]; j < grouping_start[i] + grouping_count[i]; j++) {
             selected_char = data.keywords[j * data.longest_keyword_len + selected_column];
+/*             printf("%c \n", selected_char); */
             if (is_lowercase_alphabet(selected_char)) {
                 lowercase[selected_char - 'a']++;
             } else {
@@ -710,25 +715,27 @@ Grouping_BySelectedColumn row_grouping_by_selected_column(
                 result.status = internal_result.status;
                 return result;
             }
+
+            memcpy(
+                new_data.keywords + grouping_start[i] * new_data.longest_keyword_len,
+                internal_result.keywords,
+                grouping_count[i] * new_data.longest_keyword_len
+            );
+
+            memcpy(
+                new_data.keywords_length + grouping_start[i],
+                internal_result.keywords_length,
+                grouping_count[i]
+            );
+
+            memcpy(
+                new_data.values_pair + grouping_start[i],
+                internal_result.values_pair,
+                grouping_count[i]
+            );
+
         }
 
-        memcpy(
-            new_data.keywords + grouping_start[i] * new_data.longest_keyword_len,
-            internal_result.keywords,
-            grouping_count[i] * new_data.longest_keyword_len
-        );
-
-        memcpy(
-            new_data.keywords_length + grouping_start[i],
-            internal_result.keywords_length,
-            grouping_count[i]
-        );
-
-        memcpy(
-            new_data.values_pair + grouping_start[i],
-            internal_result.values_pair,
-            grouping_count[i]
-        );
 
         memset(lowercase, 0, 26);
         memset(lowercase_start, 0, 26);

@@ -49,9 +49,12 @@ TokenPointer lexer_scan(const FileString file_string, const size_t index_positio
     while (head < file_string.length) {
         current_mode = type_check(file_string.start[head]);
 
-        if (prev_mode == NUMERIC_LITERAL && is_numeric(file_string.start[head])) { current_mode = NUMERIC_LITERAL;}
+        if (prev_mode == NUMERIC_LITERAL && is_numeric(file_string.start[head])) {
+            current_mode = NUMERIC_LITERAL;
+        }
 
-        if (current_mode != prev_mode || (current_mode == SYMBOL && prev_mode == SYMBOL)) {
+        if (current_mode != prev_mode
+            || (current_mode == SYMBOL && prev_mode == SYMBOL)) {
 
             if (current_mode == ALPHANUMERIC && is_numeric(file_string.start[head])) {
                 current_mode = NUMERIC_LITERAL;
