@@ -2,17 +2,15 @@
 #define GROUPING_SELECTED_COLUMN_H
 
 #include "status.h"
-#include "parser.h"
+#include "keyword_data.h"
 
-typedef struct Internal_Grouping_BySelectedColumn {
+typedef struct Internal_Grouping_By_Selected_Column {
     Status status;
-    char *keywords;
-    unsigned char *keywords_length;
-    unsigned short *values_pair;
-}Internal_Grouping_BySelectedColumn;
+    Keyword_Data data;
+}Internal_Grouping_By_Selected_Column;
 
-Internal_Grouping_BySelectedColumn grouping_by_selected_column(
-    const KeywordData data,
+Internal_Grouping_By_Selected_Column grouping_by_selected_column(
+    const Keyword_Data data,
     const unsigned char selected_column,
     const unsigned char *uppercase_start,
     const unsigned char *lowercase_start,

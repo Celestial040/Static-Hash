@@ -1,10 +1,16 @@
 #include "file_loader.h"
+#include "include/keyword_data.h"
 #include "parser.h"
 #include "status.h"
 
 int main(void) {
-    FileString input_file = {NO_ERROR, NULL, 0};
-    Parser parser_result = {NO_ERROR};
+    FileString input_file = {
+        NO_ERROR, NULL, 0
+    };
+
+    Parser parser_result = {
+        NO_ERROR, {NULL, NULL, NULL, 0, 0, 0}
+    };
 
     const char *filename = "test_text/input.txt";
 
@@ -19,6 +25,10 @@ int main(void) {
         status_print(parser_result.status);
         return 1;
     }
+
+    print_keyword_data_details(parser_result.data);
+
+
 
     return 0;
 }

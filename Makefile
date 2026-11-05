@@ -4,10 +4,7 @@ SRCS := main.c \
         utils/lexer.c \
         utils/parser.c \
         utils/status.c \
-        utils/vector/best_columns.c\
-        utils/sort/median.c\
-        utils/grouping/keywords_length.c \
-        utils/grouping/selected_column.c
+        utils/keyword_data.c \
 
 HEADERS := $(wildcard include/*.h include/*/*.h)
 INC_FLAGS := -Iinclude
