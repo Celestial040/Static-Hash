@@ -5,6 +5,10 @@ SRCS := main.c \
         utils/parser.c \
         utils/status.c \
         utils/keyword_data.c \
+        utils/grouping/grouping_buffer.c \
+        utils/grouping/keywords_length.c \
+        utils/column_selection/column_selection.c \
+        utils/column_selection/by_length.c
 
 HEADERS := $(wildcard include/*.h include/*/*.h)
 INC_FLAGS := -Iinclude

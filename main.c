@@ -1,4 +1,5 @@
 #include "file_loader.h"
+#include "include/column_selection/column_selection.h"
 #include "include/keyword_data.h"
 #include "parser.h"
 #include "status.h"
@@ -9,6 +10,10 @@ int main(void) {
     };
 
     Parser parser_result = {
+        NO_ERROR, {NULL, NULL, NULL, 0, 0, 0}
+    };
+
+    Column_Selection column_selection_result = {
         NO_ERROR, {NULL, NULL, NULL, 0, 0, 0}
     };
 
@@ -26,7 +31,12 @@ int main(void) {
         return 1;
     }
 
-    print_keyword_data_details(parser_result.data);
+    column_selection_result = column_selection_start(parser_result.data);
+    if (column_selection_result.status != NO_ERROR) {
+        status_print(parser_result.status);
+        return 1;
+    }
+
 
 
 

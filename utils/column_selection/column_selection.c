@@ -3,10 +3,12 @@
 #include <stdlib.h>
 
 
-Column_Selection column_selection_start(const Keyword_Data data) {
+Column_Selection column_selection_start(Keyword_Data src_data) {
     Column_Selection result = {
         NO_ERROR, {NULL, NULL, NULL, 0, 0 ,0}
     };
+
+    Keyword_Data data = move_keyword_data(src_data);
 
     Grouping_By_Length length_grouping_result = {
         NO_ERROR, {NULL, NULL, NULL, 0, 0 ,0}, {NULL, NULL, 0}
@@ -18,6 +20,8 @@ Column_Selection column_selection_start(const Keyword_Data data) {
         result.status = length_grouping_result.status;
         return result;
     }
+
+    print_keyword_data_details(length_grouping_result.data);
 
     return result;
 }

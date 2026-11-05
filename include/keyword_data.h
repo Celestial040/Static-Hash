@@ -29,7 +29,7 @@ Keyword_Data_Status allocate_keyword_data(
 );
 
 Keyword_Data_Status copy_keyword_data(const Keyword_Data data);
-
+Keyword_Data move_keyword_data(Keyword_Data data);
 void free_keyword_data(Keyword_Data *data);
 
 

@@ -9,6 +9,6 @@ typedef struct Column_Selection {
     Keyword_Data data;
 } Column_Selection;
 
-Column_Selection column_selection_start(const Keyword_Data data);
+Column_Selection column_selection_start(Keyword_Data src_data);
 
 #endif
