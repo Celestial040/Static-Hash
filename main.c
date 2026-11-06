@@ -3,6 +3,7 @@
 #include "include/keyword_data.h"
 #include "parser.h"
 #include "status.h"
+#include <stdio.h>
 
 int main(void) {
     FileString input_file = {
@@ -14,7 +15,7 @@ int main(void) {
     };
 
     Column_Selection column_selection_result = {
-        NO_ERROR, {NULL, NULL, NULL, 0, 0, 0}
+        NO_ERROR, {NULL, NULL, NULL, 0, 0, 0}, {NULL, 0, 0}
     };
 
     const char *filename = "test_text/input.txt";
@@ -37,8 +38,8 @@ int main(void) {
         return 1;
     }
 
-
-
+    printf("%ld %ld\n", column_selection_result.best_column.size, column_selection_result.best_column.capacity);
+    printf("%d \n", column_selection_result.best_column.data[column_selection_result.best_column.size-1]);
 
     return 0;
 }

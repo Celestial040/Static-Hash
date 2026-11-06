@@ -1,5 +1,4 @@
 #include <stddef.h>
-#include <stdio.h>
 #include "column_selection/column_pick.h"
 #include "char_manip.h"
 
