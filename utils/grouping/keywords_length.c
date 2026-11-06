@@ -7,7 +7,7 @@
 #include <string.h>
 
 Internal_Grouping_By_Length grouping_by_keywords_length(
-    const Keyword_Data data,
+    Keyword_Data data,
     const unsigned char *grouping_start
 ) {
     Internal_Grouping_By_Length result = {
@@ -67,6 +67,7 @@ Internal_Grouping_By_Length grouping_by_keywords_length(
     }
 
     free(grouping_start_copy);
+    free_keyword_data(&data);
 
     result.data = keyword_data_copy.data;
     return result;

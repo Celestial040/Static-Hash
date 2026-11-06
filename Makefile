@@ -8,7 +8,8 @@ SRCS := main.c \
         utils/grouping/grouping_buffer.c \
         utils/grouping/keywords_length.c \
         utils/column_selection/column_selection.c \
-        utils/column_selection/by_length.c
+        utils/column_selection/by_length.c \
+        utils/column_selection/column_pick.c
 
 HEADERS := $(wildcard include/*.h include/*/*.h)
 INC_FLAGS := -Iinclude

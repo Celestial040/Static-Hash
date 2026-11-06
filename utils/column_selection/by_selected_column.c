@@ -117,8 +117,7 @@ Grouping_By_Selected_Column row_grouping_by_selected_column(
 
     unsigned char selected_column = column_pick_based_on_length(
         data,
-        grouping_buffer.grouping_count,
-        grouping_buffer.grouping_start_index
+        grouping_buffer
     );
 
     new_data = copy_keyword_data(data);

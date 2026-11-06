@@ -67,7 +67,5 @@ Grouping_By_Length row_grouping_by_length(Keyword_Data src_data) {
     result.data = internal_result.data;
     result.grouping_buffer = grouping_buffer.buffer;
 
-    free_keyword_data(&data);
-
     return result;
 }
