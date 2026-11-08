@@ -6,10 +6,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-unsigned char no_pair_left(const Grouping_Buffer grouping_buffer) {
+unsigned char no_pair_left(const Grouping_Buffer grouping) {
     unsigned char i = 0;
-    for (i = 0; i < grouping_buffer.length; i++) {
-        if (grouping_buffer.grouping_count[i] > 1) {
+    for (i = 0; i < grouping.size; i++) {
+        if (grouping.count[i] > 1) {
             return FALSE;
         }
     }
@@ -18,7 +18,7 @@ unsigned char no_pair_left(const Grouping_Buffer grouping_buffer) {
 
 Column_Selection column_selection_second_stage(
     Column_Selection src_data,
-    const Grouping_Buffer grouping_buffer) {
+    const Grouping_Buffer grouping) {
     Column_Selection result = {
         NO_ERROR, {NULL, NULL, NULL, 0, 0 ,0}, {NULL, 0, 0}
     };
@@ -31,7 +31,7 @@ Column_Selection column_selection_second_stage(
         NULL, 0, 0
     };
 
-/*     Grouping_Buffer new_grouping_buffer = {
+/*     Grouping_Buffer new_grouping = {
         NULL, NULL, 0
     };
 
@@ -42,7 +42,7 @@ Column_Selection column_selection_second_stage(
     data = move_keyword_data(&src_data.data);
     best_columns = move_unsigned_char_vector(&src_data.best_column);
 
-    row_grouping_by_selected_column(data, grouping_buffer, best_columns.data[best_columns.size-1]);
+    row_grouping_based_on_selected_column(&data, grouping, best_columns.data[best_columns.size-1]);
 
     return result;
 }
@@ -61,7 +61,7 @@ Column_Selection column_selection_first_stage(Keyword_Data src_data) {
     };
 
     Grouping_By_Length length_grouping_result = {
-        NO_ERROR, {NULL, NULL, NULL, 0, 0 ,0}, {NULL, NULL, 0}
+        NO_ERROR, {NULL, NULL, NULL, 0, 0 ,0}, {NULL, NULL, 0, 0}
     };
 
     unsigned char selected_column = 0;
@@ -81,14 +81,14 @@ Column_Selection column_selection_first_stage(Keyword_Data src_data) {
         return result;
     }
 
-    selected_column = column_pick_based_on_length(length_grouping_result.data,length_grouping_result.grouping_buffer);
+    selected_column = column_pick_based_on_length(length_grouping_result.data,length_grouping_result.grouping);
 
     insert_unsigned_char_vector(&best_columns.vector, selected_column);
 
     result.data = length_grouping_result.data;
     result.best_column = best_columns.vector;
 
-    result = column_selection_second_stage(result, length_grouping_result.grouping_buffer);
+    result = column_selection_second_stage(result, length_grouping_result.grouping);
 
     return result;
 }

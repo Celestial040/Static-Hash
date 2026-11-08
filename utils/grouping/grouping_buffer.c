@@ -1,45 +1,58 @@
 #include "grouping/grouping_buffer.h"
 #include <stdlib.h>
 
-Grouping_Buffer_Status allocate_grouping_buffer(const unsigned short length) {
+Grouping_Buffer_Status allocate_grouping_buffer(const unsigned short capacity) {
     Grouping_Buffer_Status result = {
-        NO_ERROR, {NULL, NULL, 0}
+        NO_ERROR, {NULL, NULL, 0, 0}
     };
 
-    Grouping_Buffer grouping_buffer = {
-        NULL, NULL, 0
+    Grouping_Buffer grouping = {
+        NULL, NULL, 0, 0
     };
 
-    grouping_buffer.length = length;
+    grouping.capacity = capacity;
+    grouping.size = 0;
 
-    grouping_buffer.grouping_count = (unsigned char *) calloc(length, sizeof(unsigned char));
-    if (grouping_buffer.grouping_count == NULL) {
+    grouping.count = (unsigned char *) calloc(capacity, sizeof(unsigned char));
+    if (grouping.count == NULL) {
         result.status = ALLOCATION_ERROR;
         return result;
     }
 
-    grouping_buffer.grouping_start_index = (unsigned char *) calloc(length, sizeof(unsigned char));
-    if (grouping_buffer.grouping_start_index == NULL) {
-        free(grouping_buffer.grouping_count);
+    grouping.start = (unsigned char *) calloc(capacity, sizeof(unsigned char));
+    if (grouping.start == NULL) {
+        free(grouping.count);
 
         result.status = ALLOCATION_ERROR;
         return result;
     }
 
-    result.buffer = grouping_buffer;
+    result.buffer = grouping;
     return result;
 }
 
+Status insert_grouping_buffer(Grouping_Buffer *grouping, const unsigned char count) {
+    grouping->count[grouping->size] = count;
+    if (grouping->size > 0) {
+        grouping->start[grouping->size] += grouping->start[grouping->size-1];
+        grouping->start[grouping->size] += grouping->count[grouping->size-1];
+    }
+    grouping->size++;
+    return NO_ERROR;
+}
+
 Grouping_Buffer move_grouping_buffer(Grouping_Buffer *src_buffer) {
-    Grouping_Buffer buffer = {NULL, NULL, 0};
+    Grouping_Buffer buffer = {NULL, NULL, 0, 0};
 
-    buffer.grouping_count = src_buffer->grouping_count;
-    buffer.grouping_start_index = src_buffer->grouping_start_index;
-    buffer.length = src_buffer->length;
+    buffer.count = src_buffer->count;
+    buffer.start = src_buffer->start;
+    buffer.capacity = src_buffer->capacity;
+    buffer.size = src_buffer->size;
 
-    src_buffer->grouping_count = NULL;
-    src_buffer->grouping_start_index = NULL;
-    src_buffer->length = 0;
+    src_buffer->count = NULL;
+    src_buffer->start = NULL;
+    src_buffer->capacity = 0;
+    src_buffer->size = 0;
 
     return buffer;
 }

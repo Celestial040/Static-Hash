@@ -4,9 +4,10 @@
 #include "status.h"
 
 typedef struct Grouping_Buffer {
-    unsigned char *grouping_count;
-    unsigned char *grouping_start_index;
-    unsigned short length;
+    unsigned char *count;
+    unsigned char *start;
+    unsigned short capacity;
+    unsigned short size;
 } Grouping_Buffer;
 
 typedef struct Grouping_Buffer_Status {
@@ -15,6 +16,7 @@ typedef struct Grouping_Buffer_Status {
 }Grouping_Buffer_Status;
 
 Grouping_Buffer_Status allocate_grouping_buffer(const unsigned short length);
+Status insert_grouping_buffer(Grouping_Buffer *grouping, const unsigned char count);
 Grouping_Buffer move_grouping_buffer(Grouping_Buffer *src_buffer);
 
 #endif

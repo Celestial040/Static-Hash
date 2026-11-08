@@ -8,7 +8,7 @@
 typedef struct Grouping_By_Length {
     Status status;
     Keyword_Data data;
-    Grouping_Buffer grouping_buffer;
+    Grouping_Buffer grouping;
 } Grouping_By_Length;
 
 Grouping_By_Length row_grouping_by_length(const Keyword_Data data);

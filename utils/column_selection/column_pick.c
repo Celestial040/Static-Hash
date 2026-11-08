@@ -41,22 +41,22 @@ unsigned short column_pair_calc(
 
 unsigned short column_score_calculation_based_on_length(
     const Keyword_Data data,
-    const Grouping_Buffer grouping_buffer,
+    const Grouping_Buffer grouping,
     const unsigned char column_index
 ){
     unsigned short column_separation_score = 0;
     unsigned char i = 0;
 
     for (i = data.shortest_keyword_len; i <= data.longest_keyword_len; i++) {
-        if (i > column_index && grouping_buffer.grouping_count[i] > 1) {
+        if (i > column_index && grouping.count[i] > 1) {
 
             column_separation_score +=
-                grouping_buffer.grouping_count[i] * (grouping_buffer.grouping_count[i] - 1) / 2;
+                grouping.count[i] * (grouping.count[i] - 1) / 2;
 
             column_separation_score -= column_pair_calc(
                 data,
-                grouping_buffer.grouping_start_index[i],
-                grouping_buffer.grouping_count[i],
+                grouping.start[i],
+                grouping.count[i],
                 column_index
             );
 
@@ -68,7 +68,7 @@ unsigned short column_score_calculation_based_on_length(
 
 unsigned char column_pick_based_on_length(
     const Keyword_Data data,
-    const Grouping_Buffer grouping_buffer
+    const Grouping_Buffer grouping
 ) {
 
     unsigned short best_column_score = 0;
@@ -80,7 +80,7 @@ unsigned char column_pick_based_on_length(
 
     for (i = 0; i < data.longest_keyword_len; i++) {
         current_column_score = column_score_calculation_based_on_length(
-            data, grouping_buffer, i
+            data, grouping, i
         );
 
 /*         printf("%d, %d \n", i, current_column_score); */

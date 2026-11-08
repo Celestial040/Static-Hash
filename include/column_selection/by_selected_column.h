@@ -8,12 +8,12 @@
 typedef struct Grouping_By_Selected_Column {
     Status status;
     Keyword_Data data;
-    Grouping_Buffer grouping_buffer;
+    Grouping_Buffer grouping;
 } Grouping_By_Selected_Column;
 
-Grouping_By_Selected_Column row_grouping_by_selected_column(
-    const Keyword_Data data,
-    const Grouping_Buffer grouping_buffer,
+Grouping_By_Selected_Column row_grouping_based_on_selected_column(
+    Keyword_Data *src_data,
+    const Grouping_Buffer src_grouping,
     const unsigned char selected_column
 );
 

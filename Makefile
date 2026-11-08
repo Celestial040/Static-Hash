@@ -7,6 +7,7 @@ SRCS := main.c \
         utils/keyword_data.c \
         utils/grouping/grouping_buffer.c \
         utils/grouping/keywords_length.c \
+        utils/grouping/selected_column.c \
         utils/column_selection/column_selection.c \
         utils/column_selection/by_length.c \
         utils/column_selection/by_selected_column.c \
