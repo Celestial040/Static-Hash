@@ -2,19 +2,14 @@
 #define PARSER_H
 
 #include "file_loader.h"
+#include "keyword_data.h"
 #include "status.h"
 
-
-typedef struct KeywordData {
-    char *keywords;
-    char *keyword_column;
-    unsigned char *significant_column_order;
-    unsigned short *values_pair;
-    unsigned char keyword_count;
-    unsigned char longest_keyword_len;
-} KeywordData;
+typedef struct Parser {
+    Status status;
+    Keyword_Data data;
+}Parser;
 
 
-Status parser_start(const FileString *filestring);
-
+Parser parser_start(const FileString filestring, const char *filename);
 #endif

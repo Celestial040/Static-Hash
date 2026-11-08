@@ -126,8 +126,8 @@ Status most_collide_keyword_sort(KeywordData *keyword_data, unsigned short *weig
     keyword_data->keywords = temp_keyword;
     free(keyword_data->values_pair);
     keyword_data->values_pair = keyword_data->values_pair;
-    free(keyword_data->keyword_column);
-    keyword_data->keyword_column = temp_keyword_column;
+/*     free(keyword_data->keyword_column);
+    keyword_data->keyword_column = temp_keyword_column; */
 
     return NO_ERROR;
 }

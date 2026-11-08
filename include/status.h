@@ -1,5 +1,7 @@
 #ifndef STATUS_H
 #define STATUS_H
+
+
 typedef unsigned char Status;
 
 enum {
@@ -17,7 +19,8 @@ enum {
     INDEX_OUT_OF_BOUND,
     STRING_TOO_LONG,
     DIGITS_TOO_LONG,
-    MAX_LIMIT_EXCEEDED
+    MAX_LIMIT_EXCEEDED,
+    END_OF_FILE
 };
 
 
