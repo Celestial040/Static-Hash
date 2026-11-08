@@ -13,7 +13,7 @@ Grouping_Buffer filling_grouping_buffer_by_length(const Keyword_Data data, Group
     unsigned char prev = 0;
     unsigned char offset = 0;
 
-    buffer = move_grouping_buffer(src_buffer);
+    buffer = move_grouping_buffer(&src_buffer);
 
     for (i = 0; i < data.keyword_count; i++) {
         buffer.grouping_count[data.keywords_length[i]]++;
@@ -45,7 +45,7 @@ Grouping_By_Length row_grouping_by_length(Keyword_Data src_data) {
         NULL, NULL, NULL, 0, 0, 0
     };
 
-    data = move_keyword_data(src_data);
+    data = move_keyword_data(&src_data);
 
     grouping_buffer = allocate_grouping_buffer(data.longest_keyword_len + 1);
     if (grouping_buffer.status != NO_ERROR) {

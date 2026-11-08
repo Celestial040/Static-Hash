@@ -11,5 +11,11 @@ typedef struct Grouping_By_Selected_Column {
     Grouping_Buffer grouping_buffer;
 } Grouping_By_Selected_Column;
 
+Grouping_By_Selected_Column row_grouping_by_selected_column(
+    const Keyword_Data data,
+    const Grouping_Buffer grouping_buffer,
+    const unsigned char selected_column
+);
+
 
 #endif

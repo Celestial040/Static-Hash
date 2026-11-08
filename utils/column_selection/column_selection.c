@@ -1,8 +1,51 @@
 #include "column_selection/column_selection.h"
 #include "column_selection/by_length.h"
 #include "column_selection/column_pick.h"
+#include "column_selection/by_selected_column.h"
+#include "char_manip.h"
 #include <stdio.h>
 #include <stdlib.h>
+
+unsigned char no_pair_left(const Grouping_Buffer grouping_buffer) {
+    unsigned char i = 0;
+    for (i = 0; i < grouping_buffer.length; i++) {
+        if (grouping_buffer.grouping_count[i] > 1) {
+            return FALSE;
+        }
+    }
+    return TRUE;
+}
+
+Column_Selection column_selection_second_stage(
+    Column_Selection src_data,
+    const Grouping_Buffer grouping_buffer) {
+    Column_Selection result = {
+        NO_ERROR, {NULL, NULL, NULL, 0, 0 ,0}, {NULL, 0, 0}
+    };
+
+    Keyword_Data data = {
+        NULL, NULL, NULL, 0, 0 ,0
+    };
+
+    unsigned_char_Vector best_columns = {
+        NULL, 0, 0
+    };
+
+/*     Grouping_Buffer new_grouping_buffer = {
+        NULL, NULL, 0
+    };
+
+    Grouping_By_Selected_Column selected_column_grouping_result = {
+        NO_ERROR, {NULL, NULL, NULL, 0, 0 ,0}, {NULL, NULL, 0}
+    }; */
+
+    data = move_keyword_data(&src_data.data);
+    best_columns = move_unsigned_char_vector(&src_data.best_column);
+
+    row_grouping_by_selected_column(data, grouping_buffer, best_columns.data[best_columns.size-1]);
+
+    return result;
+}
 
 Column_Selection column_selection_first_stage(Keyword_Data src_data) {
     Column_Selection result = {
@@ -23,9 +66,9 @@ Column_Selection column_selection_first_stage(Keyword_Data src_data) {
 
     unsigned char selected_column = 0;
 
-    data = move_keyword_data(src_data);
+    data = move_keyword_data(&src_data);
 
-    best_columns = allocate_unsigned_char_vector(src_data.longest_keyword_len*2);
+    best_columns = allocate_unsigned_char_vector(data.longest_keyword_len*2);
     if (best_columns.status != NO_ERROR) {
         result.status = best_columns.status;
         return result;
@@ -45,14 +88,10 @@ Column_Selection column_selection_first_stage(Keyword_Data src_data) {
     result.data = length_grouping_result.data;
     result.best_column = best_columns.vector;
 
+    result = column_selection_second_stage(result, length_grouping_result.grouping_buffer);
+
     return result;
 }
-
-/* Column_Selection column_selection_second_stage(Keyword_Data src_data) {
-
-
-} */
-
 
 Column_Selection column_selection_start(Keyword_Data data) {
     Column_Selection result = {

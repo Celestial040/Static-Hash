@@ -30,16 +30,16 @@ Grouping_Buffer_Status allocate_grouping_buffer(const unsigned short length) {
     return result;
 }
 
-Grouping_Buffer move_grouping_buffer(Grouping_Buffer src_buffer) {
+Grouping_Buffer move_grouping_buffer(Grouping_Buffer *src_buffer) {
     Grouping_Buffer buffer = {NULL, NULL, 0};
 
-    buffer.grouping_count = src_buffer.grouping_count;
-    buffer.grouping_start_index = src_buffer.grouping_start_index;
-    buffer.length = src_buffer.length;
+    buffer.grouping_count = src_buffer->grouping_count;
+    buffer.grouping_start_index = src_buffer->grouping_start_index;
+    buffer.length = src_buffer->length;
 
-    src_buffer.grouping_count = NULL;
-    src_buffer.grouping_start_index = NULL;
-    src_buffer.length = 0;
+    src_buffer->grouping_count = NULL;
+    src_buffer->grouping_start_index = NULL;
+    src_buffer->length = 0;
 
     return buffer;
 }

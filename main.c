@@ -38,8 +38,8 @@ int main(void) {
         return 1;
     }
 
-    printf("%ld %ld\n", column_selection_result.best_column.size, column_selection_result.best_column.capacity);
-    printf("%d \n", column_selection_result.best_column.data[column_selection_result.best_column.size-1]);
+
+
 
     return 0;
 }

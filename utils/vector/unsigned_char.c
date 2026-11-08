@@ -1,5 +1,6 @@
 #include "vector/unsigned_char.h"
 #include "status.h"
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 

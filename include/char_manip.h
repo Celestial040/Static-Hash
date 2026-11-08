@@ -42,4 +42,9 @@ TextLine find_next_endline(
     const size_t current_index
 );
 
+enum {
+    FALSE = 0,
+    TRUE = 1
+};
+
 #endif

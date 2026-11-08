@@ -135,26 +135,26 @@ Keyword_Data_Status copy_keyword_data(const Keyword_Data data) {
     return result;
 }
 
-Keyword_Data move_keyword_data(Keyword_Data data) {
+Keyword_Data move_keyword_data(Keyword_Data *data) {
     Keyword_Data result = {
         NULL,NULL,NULL,0,0,0
     };
 
-    result.keywords = data.keywords;
-    result.keywords_length = data.keywords_length;
-    result.values_pair = data.values_pair;
+    result.keywords = data->keywords;
+    result.keywords_length = data->keywords_length;
+    result.values_pair = data->values_pair;
 
-    result.keyword_count = data.keyword_count;
-    result.shortest_keyword_len = data.shortest_keyword_len;
-    result.longest_keyword_len = data.longest_keyword_len;
+    result.keyword_count = data->keyword_count;
+    result.shortest_keyword_len = data->shortest_keyword_len;
+    result.longest_keyword_len = data->longest_keyword_len;
 
-    data.keywords = NULL;
-    data.keywords_length = NULL;
-    data.values_pair = NULL;
+    data->keywords = NULL;
+    data->keywords_length = NULL;
+    data->values_pair = NULL;
 
-    data.keyword_count = 0;
-    data.shortest_keyword_len = 0;
-    data.longest_keyword_len = 0;
+    data->keyword_count = 0;
+    data->shortest_keyword_len = 0;
+    data->longest_keyword_len = 0;
 
 
     return result;

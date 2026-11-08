@@ -9,6 +9,7 @@ SRCS := main.c \
         utils/grouping/keywords_length.c \
         utils/column_selection/column_selection.c \
         utils/column_selection/by_length.c \
+        utils/column_selection/by_selected_column.c \
         utils/column_selection/column_pick.c \
         utils/vector/unsigned_char.c \
         utils/sort/ascending/unsigned_char_insertion_sort.c

@@ -15,6 +15,6 @@ typedef struct Grouping_Buffer_Status {
 }Grouping_Buffer_Status;
 
 Grouping_Buffer_Status allocate_grouping_buffer(const unsigned short length);
-Grouping_Buffer move_grouping_buffer(Grouping_Buffer src_buffer);
+Grouping_Buffer move_grouping_buffer(Grouping_Buffer *src_buffer);
 
 #endif
