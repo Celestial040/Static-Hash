@@ -1,4 +1,4 @@
-#include "sort/median.h"
+#include "sort/helper/median.h"
 
 unsigned short median_of_three(unsigned short a, unsigned short b, unsigned short c) {
     if ((c > a && a > b) || (b > a && a > c)) {

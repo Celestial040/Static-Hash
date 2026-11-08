@@ -4,10 +4,16 @@ SRCS := main.c \
         utils/lexer.c \
         utils/parser.c \
         utils/status.c \
-        utils/vector/landing_spot.c\
-        utils/sort/median.c\
+        utils/keyword_data.c \
+        utils/grouping/grouping_buffer.c \
         utils/grouping/keywords_length.c \
-        utils/grouping/selected_column.c
+        utils/grouping/selected_column.c \
+        utils/column_selection/column_selection.c \
+        utils/column_selection/by_length.c \
+        utils/column_selection/by_selected_column.c \
+        utils/column_selection/column_pick.c \
+        utils/vector/unsigned_char.c \
+        utils/sort/ascending/unsigned_char_insertion_sort.c
 
 HEADERS := $(wildcard include/*.h include/*/*.h)
 INC_FLAGS := -Iinclude

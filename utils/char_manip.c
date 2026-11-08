@@ -1,6 +1,8 @@
 #include <stddef.h>
 #include <stdint.h>
 #include "status.h"
+#include "char_manip.h"
+#include "file_loader.h"
 
 unsigned char is_uppercase_alphabet(const char target) {
     return target >= 65 && target <= 90;
@@ -11,7 +13,9 @@ unsigned char is_lowercase_alphabet(const char target) {
 }
 
 unsigned char is_alphabet(const char target) {
-    return is_uppercase_alphabet(target) || is_lowercase_alphabet(target);
+    return
+    is_uppercase_alphabet(target)
+    ||is_lowercase_alphabet(target);
 }
 
 unsigned char is_numeric(const char target) {
@@ -23,7 +27,10 @@ unsigned char is_alphabet_numeric(const char target) {
 }
 
 unsigned char is_tab_space(const char target) {
-    return target == ' ' || target == 9 ||(target > '\n' && target <= '\r');
+    return
+    target == ' ' ||
+    target == 9 ||
+    (target > '\n' && target <= '\r');
 }
 
 unsigned char is_endline(const char target) {
@@ -34,25 +41,59 @@ unsigned char is_whitespace(const char target) {
     return is_tab_space(target)||is_endline(target);
 }
 
-Status string_to_unsigned_short(const char *src, const size_t src_len, unsigned short *output) {
+Value_Converter value_converter(
+    const FileString filestring,
+    const size_t start,
+    const size_t length
+) {
+    Value_Converter result = {NO_ERROR, 0};
     size_t i = 0;
     unsigned short total = 0;
     unsigned short power = 1;
 
-    if (src_len >= 5) {
-        return DIGITS_TOO_LONG;
+    if (length >= 5) {
+        result.status = MAX_LIMIT_EXCEEDED;
+        return result;
     }
 
-    for (i = src_len; i > 0; i--) {
-        total += ((unsigned short) (src[i-1] - '0')) * power;
+    for (i = length; i > 0; i--) {
+        total += ((unsigned short) (filestring.start[start+i-1] - '0')) * power;
         power *= 10;
     }
 
     if (total > 9999) {
-        return MAX_LIMIT_EXCEEDED;
+        result.status = MAX_LIMIT_EXCEEDED;
+        return result;
     }
 
-    *output = total;
+    result.value = total;
 
-    return NO_ERROR;
+    return result;
+}
+
+TextLine find_next_endline(
+    const FileString filestring,
+    const size_t current_index
+) {
+
+    TextLine result = {0,0};
+    size_t index = current_index;
+    for (; index < filestring.length; index++) {
+        if (filestring.start[index] == '\n') {
+            break;
+        }
+    }
+    result.length = index;
+    for (index = current_index; index > 0; index--) {
+        if (filestring.start[index] == '\n') {
+            break;
+        }
+    }
+    if (index == 0) {
+        result.start = 0;
+        return result;
+    }
+    result.start = index+1;
+    return result;
+
 }

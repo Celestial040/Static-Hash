@@ -7,6 +7,7 @@
 #include <stdint.h>
 
 #include <stddef.h>
+#include <stdlib.h>
 
 typedef uint8_t Token;
 enum {
@@ -53,9 +54,7 @@ typedef struct TokenPointer {
     Token token;
 } TokenPointer;
 
-TokenPointer lexer_scan(const FileString *file_string) ;
-void set_lexer_index(size_t checkpoint);
-size_t get_lexer_tail(void);
 
+TokenPointer lexer_scan(const FileString file_string, size_t index_position);
 
 #endif

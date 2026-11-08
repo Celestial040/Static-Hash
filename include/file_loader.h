@@ -6,10 +6,13 @@
 #include <stdlib.h>
 
 typedef struct FileString {
+    Status status;
     char *start;
     size_t length;
 } FileString;
 
-Status load_file_to_memory(const char *filename, FileString *output);
+
+FileString load_file_to_memory(const char *filename);
+void free_filestring(FileString *filestring);
 
 #endif
