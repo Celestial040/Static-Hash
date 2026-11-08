@@ -46,6 +46,30 @@ void print_keyword_data_details(const Keyword_Data data) {
 
 }
 
+void print_partial_keyword_data_details(
+    const Partial_Keyword_Data data,
+    const unsigned char count,
+    const unsigned char longest_keyword_len
+) {
+    unsigned char i = 0;
+
+    for (i = 0; i < count; i++) {
+        printf("%.*s \n", data.keywords_length[i], data.keywords + i * longest_keyword_len);
+    }
+    printf("\n");
+
+    for (i = 0; i < count; i++) {
+        printf("%d \n", data.keywords_length[i]);
+    }
+    printf("\n");
+
+    for (i = 0; i < count; i++) {
+        printf("%d \n", data.values_pair[i]);
+    }
+    printf("\n");
+
+}
+
 Keyword_Data_Status allocate_keyword_data(
     const unsigned char keyword_count,
     const unsigned char shortest_keyword_len,
@@ -135,27 +159,47 @@ Keyword_Data_Status copy_keyword_data(const Keyword_Data data) {
     return result;
 }
 
-Keyword_Data move_keyword_data(Keyword_Data *data) {
-    Keyword_Data result = {
-        NULL,NULL,NULL,0,0,0
+Partial_Keyword_Data_Status copy_partial_keyword_data(
+    const Keyword_Data data,
+    const unsigned char row_start,
+    const unsigned char row_count
+) {
+    Partial_Keyword_Data_Status result = {
+        NO_ERROR, {NULL,NULL,NULL}
     };
 
-    result.keywords = data->keywords;
-    result.keywords_length = data->keywords_length;
-    result.values_pair = data->values_pair;
+    Partial_Keyword_Data new_data = {NULL,NULL,NULL};
 
-    result.keyword_count = data->keyword_count;
-    result.shortest_keyword_len = data->shortest_keyword_len;
-    result.longest_keyword_len = data->longest_keyword_len;
+    new_data.keywords = (char *) malloc(sizeof(char) * data.longest_keyword_len * row_count);
+    if (new_data.keywords == NULL) {
+        result.status = ALLOCATION_ERROR;
+        return result;
+    }
 
-    data->keywords = NULL;
-    data->keywords_length = NULL;
-    data->values_pair = NULL;
+    new_data.keywords_length = (unsigned char *) malloc(sizeof(unsigned char) * row_count);
+    if (new_data.keywords_length == NULL) {
 
-    data->keyword_count = 0;
-    data->shortest_keyword_len = 0;
-    data->longest_keyword_len = 0;
+        free(new_data.keywords);
+
+        result.status = ALLOCATION_ERROR;
+        return result;
+    }
+
+    new_data.values_pair = (unsigned short *) malloc(sizeof(unsigned short) * row_count);
+    if (new_data.values_pair == NULL) {
+
+        free(new_data.keywords);
+        free(new_data.keywords_length);
+
+        result.status = ALLOCATION_ERROR;
+        return result;
+    }
+
+    memcpy(new_data.keywords, data.keywords + row_start * data.longest_keyword_len, sizeof(char) * data.longest_keyword_len * data.keyword_count);
+    memcpy(new_data.keywords_length, data.keywords_length + row_start, sizeof(unsigned char) * data.keyword_count);
+    memcpy(new_data.values_pair, data.values_pair + row_start, sizeof(unsigned short) * data.keyword_count);
 
 
+    result.data = new_data;
     return result;
 }

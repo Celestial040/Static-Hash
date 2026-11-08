@@ -15,11 +15,11 @@ Internal_Grouping_By_Selected_Column grouping_by_selected_column(
 ) {
 
     Internal_Grouping_By_Selected_Column result = {
-        NO_ERROR, {NULL, NULL, NULL, 0, 0, 0}
+        NO_ERROR, {NULL, NULL, NULL}
     };
 
-    Keyword_Data_Status new_data = {
-        NO_ERROR, {NULL, NULL, NULL, 0, 0, 0}
+    Partial_Keyword_Data_Status new_data = {
+        NO_ERROR, {NULL,NULL,NULL}
     };
 
     unsigned char uppercase_start_copy[26] = {0};
@@ -32,8 +32,7 @@ Internal_Grouping_By_Selected_Column grouping_by_selected_column(
     memcpy(uppercase_start_copy, uppercase_start, 26);
     memcpy(lowercase_start_copy, lowercase_start, 26);
 
-
-    new_data = copy_keyword_data(data);
+    new_data = copy_partial_keyword_data(data, start, length);
 
     for (i = start; i < length; i++) {
         selected_char = data.keywords[i * data.longest_keyword_len + selected_column];

@@ -93,7 +93,6 @@ Column_Selection column_selection_start(Keyword_Data *data) {
     };
 
     first_stage_result = column_selection_first_stage(data);
-    print_keyword_data_details(first_stage_result.data);
     result = column_selection_second_stage(&first_stage_result);
 
     return result;

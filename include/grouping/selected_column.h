@@ -6,7 +6,7 @@
 
 typedef struct Internal_Grouping_By_Selected_Column {
     Status status;
-    Keyword_Data data;
+    Partial_Keyword_Data data;
 }Internal_Grouping_By_Selected_Column;
 
 Internal_Grouping_By_Selected_Column grouping_by_selected_column(

@@ -84,7 +84,7 @@ Grouping_By_Selected_Column row_grouping_based_on_selected_column(
     };
 
     Internal_Grouping_By_Selected_Column internal_result = {
-        NO_ERROR, {NULL, NULL, NULL, 0, 0, 0}
+        NO_ERROR, {NULL, NULL, NULL}
     };
 
     Alphabet_Grouping_Buffer alphabet = {0};
@@ -118,15 +118,31 @@ Grouping_By_Selected_Column row_grouping_based_on_selected_column(
                 src_data->grouping.count[i]
             );
 
-            print_keyword_data(internal_result.data);
+            memcpy(
+                src_data->data.keywords + src_data->grouping.start[i] * src_data->data.longest_keyword_len,
+                internal_result.data.keywords,
+                sizeof(unsigned char) * src_data->data.longest_keyword_len * src_data->grouping.count[i]
+            );
+
+            memcpy(
+                src_data->data.keywords_length + src_data->grouping.start[i],
+                internal_result.data.keywords_length,
+                sizeof(unsigned char) * src_data->grouping.count[i]
+            );
+
+            memcpy(
+                src_data->data.values_pair + src_data->grouping.start[i],
+                internal_result.data.values_pair,
+                sizeof(unsigned short) * src_data->grouping.count[i]
+            );
         }
 
-
     }
 
-    for (i = 0; i < new_grouping.buffer.size; i++) {
+/*     for (i = 0; i < new_grouping.buffer.size; i++) {
         printf("%d, %d \n", new_grouping.buffer.start[i], new_grouping.buffer.count[i]);
-    }
+    } */
+
 
     result.grouping = new_grouping.buffer;
 
