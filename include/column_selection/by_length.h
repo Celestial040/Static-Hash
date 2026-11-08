@@ -11,6 +11,6 @@ typedef struct Grouping_By_Length {
     Grouping_Buffer grouping;
 } Grouping_By_Length;
 
-Grouping_By_Length row_grouping_by_length(const Keyword_Data data);
+Grouping_By_Length row_grouping_by_length(Keyword_Data *src_data);
 
 #endif

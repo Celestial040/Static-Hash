@@ -14,10 +14,12 @@ int main(void) {
     };
 
     Column_Selection column_selection_result = {
-        NO_ERROR, {NULL, NULL, NULL, 0, 0, 0}, {NULL, 0, 0}
+        NO_ERROR,
+        {NULL, NULL, NULL, 0, 0, 0},
+        {NULL, 0, 0}
     };
 
-    const char *filename = "test_text/input.txt";
+    const char *filename = "test_text/input copy.txt";
 
     input_file = load_file_to_memory(filename);
     if (input_file.status != NO_ERROR) {
@@ -31,7 +33,7 @@ int main(void) {
         return 1;
     }
 
-    column_selection_result = column_selection_start(parser_result.data);
+    column_selection_result = column_selection_start(&parser_result.data);
     if (column_selection_result.status != NO_ERROR) {
         status_print(parser_result.status);
         return 1;

@@ -32,6 +32,9 @@ Internal_Grouping_By_Selected_Column grouping_by_selected_column(
     memcpy(uppercase_start_copy, uppercase_start, 26);
     memcpy(lowercase_start_copy, lowercase_start, 26);
 
+
+    new_data = copy_keyword_data(data);
+
     for (i = start; i < length; i++) {
         selected_char = data.keywords[i * data.longest_keyword_len + selected_column];
         if (is_lowercase_alphabet(selected_char) == 1) {

@@ -4,6 +4,7 @@
 #include "status.h"
 #include "keyword_data.h"
 #include "grouping/grouping_buffer.h"
+#include "column_selection/column_selection.h"
 
 typedef struct Grouping_By_Selected_Column {
     Status status;
@@ -12,9 +13,7 @@ typedef struct Grouping_By_Selected_Column {
 } Grouping_By_Selected_Column;
 
 Grouping_By_Selected_Column row_grouping_based_on_selected_column(
-    Keyword_Data *src_data,
-    const Grouping_Buffer src_grouping,
-    const unsigned char selected_column
+    Column_Selection_Internal_Result *src_data
 );
 
 

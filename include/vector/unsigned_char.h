@@ -20,10 +20,10 @@ unsigned_char_Vector_Status allocate_unsigned_char_vector(const size_t size_requ
 Status reallocate_unsigned_char_vector(unsigned_char_Vector *vector, const size_t size_requested);
 
 Status insert_unsigned_char_vector(unsigned_char_Vector *vector, const unsigned char item);
-Status free_unsigned_char_vector(unsigned_char_Vector *vector);
+void free_unsigned_char_vector(unsigned_char_Vector *vector);
 
 unsigned_char_Vector_Status copy_unsigned_char_vector(const unsigned_char_Vector vector);
-unsigned_char_Vector move_unsigned_char_vector(unsigned_char_Vector *vector);
+
 
 
 #endif

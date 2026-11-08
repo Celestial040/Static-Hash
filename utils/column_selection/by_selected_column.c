@@ -1,4 +1,5 @@
 #include "column_selection/by_selected_column.h"
+#include "column_selection/column_selection.h"
 #include "grouping/selected_column.h"
 #include "char_manip.h"
 #include <stdlib.h>
@@ -71,32 +72,34 @@ void generating_grouping_buffer_based_on_alphabet_grouping(
 }
 
 
-Grouping_Buffer_Status generating_grouping_buffer_based_on_selected_column_char(
-    Keyword_Data *data,
-    const Grouping_Buffer grouping,
-    const unsigned char selected_column
+Grouping_By_Selected_Column row_grouping_based_on_selected_column(
+    Column_Selection_Internal_Result *src_data
 ) {
-    Grouping_Buffer_Status result = {
-        NO_ERROR, {NULL, NULL, 0, 0}
+    Grouping_By_Selected_Column result = {
+        NO_ERROR, {NULL, NULL, NULL, 0, 0, 0}, {NULL, NULL, 0, 0}
     };
 
     Grouping_Buffer_Status new_grouping = {
         NO_ERROR, {NULL, NULL, 0, 0}
     };
 
+    Internal_Grouping_By_Selected_Column internal_result = {
+        NO_ERROR, {NULL, NULL, NULL, 0, 0, 0}
+    };
+
     Alphabet_Grouping_Buffer alphabet = {0};
     unsigned char i = 0;
 
     new_grouping = allocate_grouping_buffer(
-        data->keyword_count
+        src_data->data.keyword_count
     );
 
-    for (i = data->shortest_keyword_len; i < data->longest_keyword_len + 1; i++) {
+    for (i = src_data->data.shortest_keyword_len; i < src_data->data.longest_keyword_len + 1; i++) {
         generating_alphabet_grouping_based_on_selected_column_char(
-            *data,
-            grouping.start[i],
-            grouping.count[i],
-            selected_column,
+            src_data->data,
+            src_data->grouping.start[i],
+            src_data->grouping.count[i],
+            src_data->selected_column,
             &alphabet
         );
 
@@ -104,37 +107,28 @@ Grouping_Buffer_Status generating_grouping_buffer_based_on_selected_column_char(
             alphabet,
             &new_grouping.buffer
         );
+
+        if (src_data->grouping.count[i] > 1) {
+            internal_result = grouping_by_selected_column(
+                src_data->data,
+                src_data->selected_column,
+                alphabet.uppercase_start,
+                alphabet.lowercase_start,
+                src_data->grouping.start[i],
+                src_data->grouping.count[i]
+            );
+
+            print_keyword_data(internal_result.data);
+        }
+
+
     }
 
     for (i = 0; i < new_grouping.buffer.size; i++) {
-        printf("%d , %d \n", new_grouping.buffer.start[i], new_grouping.buffer.count[i]);
+        printf("%d, %d \n", new_grouping.buffer.start[i], new_grouping.buffer.count[i]);
     }
 
-    return result;
-}
+    result.grouping = new_grouping.buffer;
 
-
-Grouping_By_Selected_Column row_grouping_based_on_selected_column(
-    Keyword_Data *data,
-    const Grouping_Buffer src_grouping,
-    const unsigned char selected_column
-) {
-    Grouping_By_Selected_Column result = {
-        NO_ERROR, {NULL, NULL, NULL, 0, 0, 0}, {NULL, NULL, 0, 0}
-    };
-
-    Grouping_Buffer_Status grouping = {
-        NO_ERROR, {NULL, NULL, 0, 0}
-    };
-
-
-    grouping = generating_grouping_buffer_based_on_selected_column_char(
-        data,
-        src_grouping,
-        selected_column
-    );
-
-    result.data = *data;
-    result.grouping = grouping.buffer;
     return result;
 }

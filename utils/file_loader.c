@@ -1,3 +1,4 @@
+
 #include <stddef.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -51,11 +52,8 @@ FileString load_file_to_memory(const char *filename) {
     return result;
 }
 
-Status free_file_string(FileString *filestring) {
-    if (filestring->start || filestring->length) {
-        return NULL_POINTER;
-    }
+void free_filestring(FileString *filestring) {
     free(filestring->start);
     filestring->length = 0;
-    return NO_ERROR;
+    filestring->status = 0;
 }

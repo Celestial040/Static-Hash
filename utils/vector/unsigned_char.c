@@ -58,19 +58,6 @@ unsigned_char_Vector_Status copy_unsigned_char_vector(const unsigned_char_Vector
     return result;
 }
 
-unsigned_char_Vector move_unsigned_char_vector(unsigned_char_Vector *vector) {
-    unsigned_char_Vector result = {NULL, 0, 0};
-
-    result.capacity = vector->capacity;
-    result.size = vector->size;
-    result.data = vector->data;
-
-    vector->capacity = 0;
-    vector->size = 0;
-    vector->data = NULL;
-
-    return result;
-}
 
 Status insert_unsigned_char_vector(unsigned_char_Vector *vector, const unsigned char item) {
     if (vector->size + 1 >=vector->capacity) {
@@ -88,15 +75,9 @@ Status insert_unsigned_char_vector(unsigned_char_Vector *vector, const unsigned 
     return NO_ERROR;
 }
 
-Status free_unsigned_char_vector(unsigned_char_Vector *vector) {
-    if (vector == NULL || vector->data == NULL) {
-        return NULL_POINTER;
-    }
-
+void free_unsigned_char_vector(unsigned_char_Vector *vector) {
     free(vector->data);
     vector->data = NULL;
     vector->size = 0;
     vector->capacity = 0;
-
-    return NO_ERROR;
 }
