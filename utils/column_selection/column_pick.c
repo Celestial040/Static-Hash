@@ -131,8 +131,6 @@ unsigned char column_pick_based_on_previous_selected_column(
     unsigned char i = 0;
     unsigned char avoid_list_index = 0;
 
-
-
     for (i = 0; i < data.longest_keyword_len; i++) {
 
         if (avoid_list_index < column_to_avoid.size && i == column_to_avoid.data[avoid_list_index]) {

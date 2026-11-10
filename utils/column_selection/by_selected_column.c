@@ -72,7 +72,7 @@ void generating_grouping_buffer_based_on_alphabet_grouping(
 }
 
 
-Grouping_By_Selected_Column row_grouping_based_on_selected_column(
+/* Grouping_By_Selected_Column row_grouping_based_on_selected_column(
     Column_Selection_Internal_Result *src_data,
     unsigned short grouping_start,
     unsigned short grouping_count
@@ -144,6 +144,90 @@ Grouping_By_Selected_Column row_grouping_based_on_selected_column(
     }
 
     result.data = src_data->data;
+    result.grouping = new_grouping.buffer;
+
+    return result;
+} */
+
+Keyword_Data__Grouping row_grouping_based_on_selected_column(
+    Keyword_Data data,
+    Grouping_Buffer grouping,
+    unsigned char selected_column,
+    unsigned short grouping_start,
+    unsigned short grouping_count
+) {
+    Keyword_Data__Grouping result = {
+        {NULL, NULL, NULL, 0, 0, 0}, {NULL, NULL, 0, 0}, NO_ERROR
+    };
+
+    Grouping_Buffer_Status new_grouping = {
+        NO_ERROR, {NULL, NULL, 0, 0}
+    };
+
+    Internal_Grouping_By_Selected_Column internal_result = {
+        NO_ERROR, {NULL, NULL, NULL}
+    };
+
+    Alphabet_Grouping_Buffer alphabet = {0};
+    unsigned short i = 0;
+
+    new_grouping = allocate_grouping_buffer(
+        data.keyword_count
+    );
+
+    if (new_grouping.status != NO_ERROR) {
+        result.status = new_grouping.status;
+        return result;
+    }
+
+    for (i = grouping_start; i < grouping_start + grouping_count; i++) {
+        generating_alphabet_grouping_based_on_selected_column_char(
+            data,
+            grouping.start[i],
+            grouping.count[i],
+            selected_column,
+            &alphabet
+        );
+
+        generating_grouping_buffer_based_on_alphabet_grouping(
+            alphabet,
+            &new_grouping.buffer
+        );
+
+        if (grouping.count[i] > 1) {
+            internal_result = grouping_by_selected_column(
+                data,
+                selected_column,
+                alphabet.uppercase_start,
+                alphabet.lowercase_start,
+                grouping.start[i],
+                grouping.count[i]
+            );
+
+            memcpy(
+                data.keywords + grouping.start[i] * data.longest_keyword_len,
+                internal_result.data.keywords,
+                sizeof(unsigned char) * data.longest_keyword_len * grouping.count[i]
+            );
+
+            memcpy(
+                data.keywords_length + grouping.start[i],
+                internal_result.data.keywords_length,
+                sizeof(unsigned char) * grouping.count[i]
+            );
+
+            memcpy(
+                data.values_pair + grouping.start[i],
+                internal_result.data.values_pair,
+                sizeof(unsigned short) * grouping.count[i]
+            );
+
+            free_partial_keyword_data(&internal_result.data);
+        }
+
+    }
+
+    result.data = data;
     result.grouping = new_grouping.buffer;
 
     return result;

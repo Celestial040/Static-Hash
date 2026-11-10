@@ -391,7 +391,6 @@ Parser parser_start(
         {NULL, NULL, NULL, 0, 0, 0}, NO_ERROR
     };
 
-
     parse_header_result = parse_header(filestring, filename);
     if (parse_header_result.status != NO_ERROR) {
         result.status = parse_header_result.status;

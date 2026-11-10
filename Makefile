@@ -32,3 +32,6 @@ test: $(SRCS) $(HEADERS)
 
 strict_test: $(SRCS) $(HEADERS)
 	gcc -O0 -march=native -std=c89 $(STRICT_CHECK_FLAG) $(INC_FLAGS) $(SRCS)  -o ./output/main_test
+
+performance_test: $(SRCS) $(HEADERS)
+	gcc -O0 -pg -march=native -std=c89 $(CHECK_FLAG) $(INC_FLAGS) $(SRCS)  -o ./output/main_test

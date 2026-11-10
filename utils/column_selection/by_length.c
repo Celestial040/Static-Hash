@@ -4,7 +4,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include "status.h"
-#include "column_selection/by_length.h"
+#include "column_selection/column_selection.h"
 #include "grouping/keywords_length.h"
 
 void generating_grouping_buffer_base_on_keywords_length(const Keyword_Data data, Grouping_Buffer grouping) {
@@ -24,9 +24,9 @@ void generating_grouping_buffer_base_on_keywords_length(const Keyword_Data data,
     }
 }
 
-Grouping_By_Length row_grouping_by_length(Keyword_Data *data) {
-    Grouping_By_Length result = {
-        NO_ERROR, {NULL, NULL, NULL, 0, 0 ,0}, {NULL, NULL, 0, 0}
+Keyword_Data__Grouping row_grouping_by_length(Keyword_Data *data) {
+    Keyword_Data__Grouping result = {
+        {NULL, NULL, NULL, 0, 0 ,0}, {NULL, NULL, 0, 0}, NO_ERROR
     };
 
     Grouping_Buffer_Status grouping = {
