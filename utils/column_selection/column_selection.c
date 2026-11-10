@@ -6,15 +6,24 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+typedef struct Pair_Check_Result {
+    unsigned char no_more_pair_exist;
+    unsigned char pair_index_location;
+}Pair_Check_Result;
 
-unsigned char no_pair_left(const Grouping_Buffer grouping) {
+
+Pair_Check_Result no_pair_left(const Grouping_Buffer grouping) {
+    Pair_Check_Result result = {0,0};
     unsigned char i = 0;
     for (i = 0; i < grouping.size; i++) {
         if (grouping.count[i] > 1) {
-            return FALSE;
+            result.no_more_pair_exist = FALSE;
+            result.pair_index_location = i;
+            return result;
         }
     }
-    return TRUE;
+    result.no_more_pair_exist = TRUE;
+    return result;
 }
 
 Column_Selection column_selection_second_stage(Column_Selection_Internal_Result *first_stage_result) {
@@ -35,6 +44,17 @@ Column_Selection column_selection_second_stage(Column_Selection_Internal_Result 
         {NULL, 0, 0}
     };
 
+    Column_Selection_Internal_Result iteration_data = {
+        {NULL, NULL, NULL, 0, 0 ,0},
+        {NULL, NULL, 0, 0},
+        NO_ERROR,
+        0
+    };
+
+    Pair_Check_Result pair_check_result =  {0,0};
+    unsigned char next_selected_column = 0;
+    Status insert_status = NO_ERROR;
+
     best_columns = allocate_unsigned_char_vector(first_stage_result->data.longest_keyword_len);
     if (best_columns.status != NO_ERROR) {
         result.status = best_columns.status;
@@ -42,10 +62,46 @@ Column_Selection column_selection_second_stage(Column_Selection_Internal_Result 
     }
 
     selected_column_grouping_result = row_grouping_based_on_selected_column(
-        first_stage_result
+        first_stage_result,
+        first_stage_result->data.shortest_keyword_len,
+        first_stage_result->data.longest_keyword_len - first_stage_result->data.shortest_keyword_len + 1
     );
 
-    printf("%d \n", no_pair_left(selected_column_grouping_result.grouping));
+    pair_check_result = no_pair_left(selected_column_grouping_result.grouping);
+
+    insert_status = insert_unsigned_char_vector(&best_columns.vector, first_stage_result->selected_column);
+    if (insert_status != NO_ERROR) {
+        result.status = insert_status;
+        return result;
+    }
+
+    while (pair_check_result.no_more_pair_exist == FALSE) {
+        if (best_columns.vector.size == first_stage_result->data.longest_keyword_len) {
+            printf("Error duplicate keyword");
+            result.status = MISMATCH_EXPECTATION;
+            return result;
+        }
+
+        next_selected_column = column_pick_based_on_previous_selected_column(
+            selected_column_grouping_result.data,
+            selected_column_grouping_result.grouping,
+            best_columns.vector
+        );
+
+        iteration_data.data = selected_column_grouping_result.data;
+        iteration_data.grouping = selected_column_grouping_result.grouping;
+        iteration_data.selected_column = next_selected_column;
+
+        selected_column_grouping_result = row_grouping_based_on_selected_column(
+            &iteration_data,
+            0,
+            selected_column_grouping_result.data.keyword_count
+        );
+
+        pair_check_result = no_pair_left(selected_column_grouping_result.grouping);
+    }
+
+    print_keyword_data_details(selected_column_grouping_result.data);
 
     return result;
 }

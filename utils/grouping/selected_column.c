@@ -34,7 +34,7 @@ Internal_Grouping_By_Selected_Column grouping_by_selected_column(
 
     new_data = copy_partial_keyword_data(data, start, length);
 
-    for (i = start; i < length; i++) {
+    for (i = start; i < start + length; i++) {
         selected_char = data.keywords[i * data.longest_keyword_len + selected_column];
         if (is_lowercase_alphabet(selected_char) == 1) {
             target_index = lowercase_start_copy[selected_char - 'a'];

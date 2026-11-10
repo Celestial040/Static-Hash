@@ -13,7 +13,9 @@ typedef struct Grouping_By_Selected_Column {
 } Grouping_By_Selected_Column;
 
 Grouping_By_Selected_Column row_grouping_based_on_selected_column(
-    Column_Selection_Internal_Result *src_data
+    Column_Selection_Internal_Result *src_data,
+    unsigned short grouping_start,
+    unsigned short grouping_count
 );
 
 

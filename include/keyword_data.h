@@ -35,7 +35,11 @@ void print_partial_keyword_data_details(
     const unsigned char count,
     const unsigned char longest_keyword_len
 );
-
+void print_partial_keyword_data(
+    const Partial_Keyword_Data data,
+    const unsigned char count,
+    const unsigned char longest_keyword_len
+);
 
 Keyword_Data_Status allocate_keyword_data(
     const unsigned char keyword_count,
@@ -52,6 +56,7 @@ Partial_Keyword_Data_Status copy_partial_keyword_data(
 );
 
 void free_keyword_data(Keyword_Data *data);
+void free_partial_keyword_data(Partial_Keyword_Data *data);
 
 
 #endif

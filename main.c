@@ -19,7 +19,7 @@ int main(void) {
         {NULL, 0, 0}
     };
 
-    const char *filename = "test_text/input.txt";
+    const char *filename = "test_text/input copy.txt";
 
     input_file = load_file_to_memory(filename);
     if (input_file.status != NO_ERROR) {
