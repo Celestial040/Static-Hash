@@ -17,6 +17,16 @@ void free_keyword_data(Keyword_Data *data) {
     data->longest_keyword_len = 0;
 }
 
+void free_partial_keyword_data(Partial_Keyword_Data *data) {
+    free(data->keywords);
+    free(data->keywords_length);
+    free(data->values_pair);
+
+    data->keywords = NULL;
+    data->keywords_length = NULL;
+    data->values_pair = NULL;
+}
+
 void print_keyword_data(const Keyword_Data data) {
     unsigned char i = 0;
 
@@ -68,6 +78,19 @@ void print_partial_keyword_data_details(
     }
     printf("\n");
 
+}
+
+void print_partial_keyword_data(
+    const Partial_Keyword_Data data,
+    const unsigned char count,
+    const unsigned char longest_keyword_len
+) {
+    unsigned char i = 0;
+
+    for (i = 0; i < count; i++) {
+        printf("%.*s \n", data.keywords_length[i], data.keywords + i * longest_keyword_len);
+    }
+    printf("\n");
 }
 
 Keyword_Data_Status allocate_keyword_data(
