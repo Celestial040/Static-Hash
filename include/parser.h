@@ -11,5 +11,5 @@ typedef struct Parser {
 }Parser;
 
 
-Parser parser_start(const FileString filestring, const char *filename);
+Parser parser_start(FileString filestring, const char *filename);
 #endif

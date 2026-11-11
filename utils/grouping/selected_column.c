@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include <string.h>
 
-Internal_Grouping_By_Selected_Column grouping_by_selected_column(
+Partial_Keyword_Data_Status grouping_by_selected_column(
     const Keyword_Data data,
     const unsigned char selected_column,
     const unsigned char *uppercase_start,
@@ -14,7 +14,7 @@ Internal_Grouping_By_Selected_Column grouping_by_selected_column(
     const unsigned char length
 ) {
 
-    Internal_Grouping_By_Selected_Column result = {
+    Partial_Keyword_Data_Status result = {
         NO_ERROR, {NULL, NULL, NULL}
     };
 

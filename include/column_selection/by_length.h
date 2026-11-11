@@ -4,6 +4,6 @@
 #include "keyword_data.h"
 #include "column_selection/column_selection.h"
 
-Keyword_Data__Grouping row_grouping_by_length(Keyword_Data *data);
+Keyword_Data__Grouping row_grouping_by_length(Keyword_Data data);
 
 #endif

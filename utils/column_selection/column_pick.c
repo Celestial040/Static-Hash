@@ -122,7 +122,7 @@ unsigned short column_score_calculation_based_on_previous_selected_column(
 unsigned char column_pick_based_on_previous_selected_column(
     const Keyword_Data data,
     const Grouping_Buffer grouping,
-    const unsigned_char_Vector column_to_avoid
+    const Unsigned_Char_Vector column_to_avoid
 ) {
     unsigned short best_column_score = 0;
     unsigned short current_column_score = 0;

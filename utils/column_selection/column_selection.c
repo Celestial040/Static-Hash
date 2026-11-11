@@ -26,7 +26,7 @@ Pair_Check_Result no_pair_left(const Grouping_Buffer grouping) {
     return result;
 }
 
-Keyword_Data__Best_Columns column_selection(Keyword_Data *data) {
+Keyword_Data__Best_Columns column_selection(Keyword_Data data) {
     Keyword_Data__Best_Columns result = {
         {NULL, NULL, NULL, 0, 0, 0}, {NULL, 0, 0}, NO_ERROR
     };
@@ -35,7 +35,7 @@ Keyword_Data__Best_Columns column_selection(Keyword_Data *data) {
         {NULL, NULL, NULL, 0, 0 ,0}, {NULL, NULL, 0, 0}, NO_ERROR
     };
 
-    unsigned_char_Vector_Status best_columns = {
+    Unsigned_Char_Vector_Status best_columns = {
         NO_ERROR, {NULL, 0, 0}
     };
 
@@ -45,7 +45,7 @@ Keyword_Data__Best_Columns column_selection(Keyword_Data *data) {
     unsigned char duplicate_group_start = 0;
     unsigned char duplicate_group_count = 0;
 
-    grouping_result = row_grouping_by_length(data);
+    grouping_result = row_grouping_by_length(move_keyword_data(&data));
 
     if (grouping_result.status != NO_ERROR) {
         result.status = grouping_result.status;
@@ -66,7 +66,7 @@ Keyword_Data__Best_Columns column_selection(Keyword_Data *data) {
 
     grouping_result = row_grouping_based_on_selected_column(
         grouping_result.data,
-        grouping_result.grouping,
+        move_grouping_buffer(&grouping_result.grouping),
         selected_column,
         grouping_result.data.shortest_keyword_len,
         grouping_result.data.longest_keyword_len - grouping_result.data.shortest_keyword_len + 1
@@ -116,7 +116,7 @@ Keyword_Data__Best_Columns column_selection(Keyword_Data *data) {
 
         grouping_result = row_grouping_based_on_selected_column(
             grouping_result.data,
-            grouping_result.grouping,
+            move_grouping_buffer(&grouping_result.grouping),
             selected_column,
             0,
             grouping_result.data.keyword_count

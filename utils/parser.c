@@ -375,10 +375,7 @@ Parse_KeyValue body_parse_key_value(
     return result;
 }
 
-Parser parser_start(
-    const FileString filestring,
-    const char *filename
-) {
+Parser parser_start(FileString filestring, const char *filename) {
     Parser result = {
         NO_ERROR, {NULL, NULL, NULL, 0, 0, 0}
     };
@@ -416,6 +413,7 @@ Parser parser_start(
 
     }
 
+    free_filestring(&filestring);
     result.data = parse_key_value_result.data;
     return result;
 }

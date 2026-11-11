@@ -24,6 +24,7 @@ CHECK_FLAG := -Wpedantic -Wall -Wextra -Werror
 
 all: release debug
 
+
 release: $(SRCS) $(HEADERS)
 	gcc -O2 -march=native -std=c89 $(STRICT_CHECK_FLAG) $(INC_FLAGS) $(SRCS)  -o ./output/main
 

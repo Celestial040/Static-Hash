@@ -1,5 +1,6 @@
 #include "file_loader.h"
 #include "include/column_selection/column_selection.h"
+#include "include/keyword_data.h"
 #include "parser.h"
 #include "status.h"
 #include <stdio.h>
@@ -27,17 +28,18 @@ int main(void) {
         return 1;
     }
 
-    parser_result = parser_start(input_file, filename);
+    parser_result = parser_start(move_filestring(&input_file), filename);
     if (parser_result.status != NO_ERROR) {
         status_print(parser_result.status);
         return 1;
     }
 
-    column_selection_result = column_selection(&parser_result.data);
+    column_selection_result = column_selection(move_keyword_data(&parser_result.data));
     if (column_selection_result.status != NO_ERROR) {
         status_print(column_selection_result.status);
         return 1;
     }
+
 
     return 0;
 }

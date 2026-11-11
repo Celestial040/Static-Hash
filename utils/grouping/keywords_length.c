@@ -6,11 +6,11 @@
 #include <stdlib.h>
 #include <string.h>
 
-Internal_Grouping_By_Length grouping_by_keywords_length(
+Keyword_Data_Status grouping_by_keywords_length(
     const Keyword_Data data,
     const unsigned char *grouping_start
 ) {
-    Internal_Grouping_By_Length result = {
+    Keyword_Data_Status result = {
         NO_ERROR, {NULL, NULL, NULL, 0, 0 , 0}
     };
 

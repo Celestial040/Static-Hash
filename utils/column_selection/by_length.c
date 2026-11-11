@@ -24,7 +24,7 @@ void generating_grouping_buffer_base_on_keywords_length(const Keyword_Data data,
     }
 }
 
-Keyword_Data__Grouping row_grouping_by_length(Keyword_Data *data) {
+Keyword_Data__Grouping row_grouping_by_length(Keyword_Data data) {
     Keyword_Data__Grouping result = {
         {NULL, NULL, NULL, 0, 0 ,0}, {NULL, NULL, 0, 0}, NO_ERROR
     };
@@ -33,21 +33,21 @@ Keyword_Data__Grouping row_grouping_by_length(Keyword_Data *data) {
         NO_ERROR, {NULL, NULL, 0, 0}
     };
 
-    Internal_Grouping_By_Length internal_result = {
+    Keyword_Data_Status internal_result = {
         NO_ERROR, {NULL, NULL, NULL, 0, 0 ,0}
     };
 
 
-    grouping = allocate_grouping_buffer(data->longest_keyword_len + 1);
+    grouping = allocate_grouping_buffer(data.longest_keyword_len + 1);
     if (grouping.status != NO_ERROR) {
         result.status = grouping.status;
         return result;
     }
 
-    generating_grouping_buffer_base_on_keywords_length(*data, grouping.buffer);
+    generating_grouping_buffer_base_on_keywords_length(data, grouping.buffer);
 
     internal_result = grouping_by_keywords_length(
-        *data, grouping.buffer.start
+        data, grouping.buffer.start
     );
 
     if (internal_result.status != NO_ERROR) {
@@ -57,7 +57,7 @@ Keyword_Data__Grouping row_grouping_by_length(Keyword_Data *data) {
 
     result.data = internal_result.data;
     result.grouping = grouping.buffer;
-    free_keyword_data(data);
+    free_keyword_data(&data);
 
     return result;
 }

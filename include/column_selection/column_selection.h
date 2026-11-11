@@ -14,14 +14,14 @@ typedef struct Keyword_Data__Grouping {
 
 typedef struct Keyword_Data__Best_Columns {
     Keyword_Data data;
-    unsigned_char_Vector best_columns;
+    Unsigned_Char_Vector best_columns;
     Status status;
 } Keyword_Data__Best_Columns;
 
 typedef struct Keyword_Data__Grouping__Best_Columns {
     Keyword_Data data;
     Grouping_Buffer grouping;
-    unsigned_char_Vector best_columns;
+    Unsigned_Char_Vector best_columns;
     Status status;
 } Keyword_Data__Grouping__Best_Columns;
 
@@ -32,15 +32,7 @@ typedef struct Keyword_Data__Grouping__Selected_Column {
     Status status;
 } Keyword_Data__Grouping__Selected_Column;
 
-Keyword_Data__Best_Columns column_selection(Keyword_Data *src_data);
-
-typedef struct Column_Selection_Internal_Result {
-    Keyword_Data data;
-    Grouping_Buffer grouping;
-    Status status;
-    unsigned char selected_column;
-}Column_Selection_Internal_Result;
-
+Keyword_Data__Best_Columns column_selection(Keyword_Data data);
 
 
 #endif

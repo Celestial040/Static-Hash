@@ -5,24 +5,24 @@
 #include <stddef.h>
 #include <stdint.h>
 
-typedef struct unsigned_char_Vector {
+typedef struct Unsigned_Char_Vector {
     unsigned char *data;
     size_t size;
     size_t capacity;
-} unsigned_char_Vector;
+} Unsigned_Char_Vector;
 
-typedef struct unsigned_char_Vector_Status {
+typedef struct Unsigned_Char_Vector_Status {
     Status status;
-    unsigned_char_Vector vector;
-}unsigned_char_Vector_Status;
+    Unsigned_Char_Vector vector;
+}Unsigned_Char_Vector_Status;
 
-unsigned_char_Vector_Status allocate_unsigned_char_vector(const size_t size_requested);
-Status reallocate_unsigned_char_vector(unsigned_char_Vector *vector, const size_t size_requested);
+Unsigned_Char_Vector_Status allocate_unsigned_char_vector(const size_t size_requested);
+Status reallocate_unsigned_char_vector(Unsigned_Char_Vector *vector, const size_t size_requested);
 
-Status insert_unsigned_char_vector(unsigned_char_Vector *vector, const unsigned char item);
-void free_unsigned_char_vector(unsigned_char_Vector *vector);
+Status insert_unsigned_char_vector(Unsigned_Char_Vector *vector, const unsigned char item);
+void free_unsigned_char_vector(Unsigned_Char_Vector *vector);
 
-unsigned_char_Vector_Status copy_unsigned_char_vector(const unsigned_char_Vector vector);
+Unsigned_Char_Vector_Status copy_unsigned_char_vector(const Unsigned_Char_Vector vector);
 
 
 

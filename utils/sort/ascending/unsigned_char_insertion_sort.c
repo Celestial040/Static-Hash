@@ -1,7 +1,7 @@
 #include "sort/ascending/unsigned_char_insertion_sort.h"
 #include "vector/unsigned_char.h"
 
-Status insertion_sort(unsigned_char_Vector *vector) {
+Status insertion_sort(Unsigned_Char_Vector *vector) {
     size_t i = 1;
     size_t j = 0;
     unsigned char temp = 0;
@@ -20,7 +20,7 @@ Status insertion_sort(unsigned_char_Vector *vector) {
     return NO_ERROR;
 }
 
-Status last_item_insertion_sort(unsigned_char_Vector *vector) {
+Status last_item_insertion_sort(Unsigned_Char_Vector *vector) {
     size_t i = vector->size - 1;
     size_t j = 0;
     unsigned char temp = vector->data[i];
