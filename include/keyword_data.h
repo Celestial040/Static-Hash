@@ -55,6 +55,8 @@ Partial_Keyword_Data_Status copy_partial_keyword_data(
     const unsigned char row_count
 );
 
+Keyword_Data move_keyword_data(Keyword_Data *data);
+
 void free_keyword_data(Keyword_Data *data);
 void free_partial_keyword_data(Partial_Keyword_Data *data);
 

@@ -4,7 +4,7 @@
 
 void status_print(Status status) {
 
-    const char *error_strings[15] = {
+    const char *error_strings[17] = {
         "NO_ERROR",
         "ALLOCATION_ERROR",
         "FILE_NOT_FOUND",
@@ -19,10 +19,12 @@ void status_print(Status status) {
         "INDEX_OUT_OF_BOUND",
         "STRING_TOO_LONG",
         "DIGITS_TOO_LONG",
-        "MAX_LIMIT_EXCEEDED"
+        "MAX_LIMIT_EXCEEDED",
+        "END_OF_FILE",
+        "KEYWORD_DUPLICATE_ERROR"
     };
 
-    if (status > 14) {
+    if (status > 16) {
         printf("UNKNOWN_ERROR");
         return;
     }

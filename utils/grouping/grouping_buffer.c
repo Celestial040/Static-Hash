@@ -41,6 +41,25 @@ Status insert_grouping_buffer(Grouping_Buffer *grouping, const unsigned char cou
     return NO_ERROR;
 }
 
+Grouping_Buffer move_grouping_buffer(Grouping_Buffer *grouping) {
+    Grouping_Buffer result = {
+        NULL, NULL, 0, 0
+    };
+
+    result.start = grouping->start;
+    result.count = grouping->count;
+    result.size = grouping->size;
+    result.capacity = grouping->capacity;
+
+    grouping->start = NULL;
+    grouping->count = NULL;
+    grouping->size = 0;
+    grouping->capacity = 0;
+
+    return result;
+}
+
+
 
 void free_grouping_buffer(Grouping_Buffer *grouping) {
     free(grouping->start);
