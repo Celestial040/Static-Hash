@@ -1,16 +1,9 @@
 #ifndef COLUMN_SELECTION_BY_LENGTH_H
 #define COLUMN_SELECTION_BY_LENGTH_H
 
-#include "status.h"
 #include "keyword_data.h"
-#include "grouping/grouping_buffer.h"
+#include "column_selection/column_selection.h"
 
-typedef struct Grouping_By_Length {
-    Status status;
-    Keyword_Data data;
-    Grouping_Buffer grouping;
-} Grouping_By_Length;
-
-Grouping_By_Length row_grouping_by_length(Keyword_Data *src_data);
+Keyword_Data__Grouping row_grouping_by_length(Keyword_Data data);
 
 #endif

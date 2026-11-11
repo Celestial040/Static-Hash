@@ -4,8 +4,8 @@
 #include "status.h"
 #include "vector/unsigned_char.h"
 
-Status insertion_sort(unsigned_char_Vector *vector);
+Status insertion_sort(Unsigned_Char_Vector *vector);
 
-Status last_item_insertion_sort(unsigned_char_Vector *vector);
+Status last_item_insertion_sort(Unsigned_Char_Vector *vector);
 
 #endif

@@ -13,6 +13,7 @@ typedef struct FileString {
 
 
 FileString load_file_to_memory(const char *filename);
+FileString move_filestring(FileString *filestring);
 void free_filestring(FileString *filestring);
 
 #endif

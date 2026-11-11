@@ -5,10 +5,10 @@
 #include <string.h>
 
 
-unsigned_char_Vector_Status allocate_unsigned_char_vector(const size_t size_requested) {
-    unsigned_char_Vector_Status result = {NO_ERROR, {NULL, 0, 0}};
+Unsigned_Char_Vector_Status allocate_unsigned_char_vector(const size_t size_requested) {
+    Unsigned_Char_Vector_Status result = {NO_ERROR, {NULL, 0, 0}};
 
-    unsigned_char_Vector new_vector = {NULL, 0, 0};
+    Unsigned_Char_Vector new_vector = {NULL, 0, 0};
 
     new_vector.capacity = size_requested;
     new_vector.size = 0;
@@ -24,7 +24,7 @@ unsigned_char_Vector_Status allocate_unsigned_char_vector(const size_t size_requ
     return result;
 }
 
-Status reallocate_unsigned_char_vector(unsigned_char_Vector *vector, const size_t size_requested) {
+Status reallocate_unsigned_char_vector(Unsigned_Char_Vector *vector, const size_t size_requested) {
     unsigned char *temp = (unsigned char*) realloc(
         vector->data,
         sizeof(unsigned char) * size_requested
@@ -38,10 +38,10 @@ Status reallocate_unsigned_char_vector(unsigned_char_Vector *vector, const size_
     return NO_ERROR;
 }
 
-unsigned_char_Vector_Status copy_unsigned_char_vector(const unsigned_char_Vector vector) {
-    unsigned_char_Vector_Status result = {NO_ERROR, {NULL, 0, 0}};
+Unsigned_Char_Vector_Status copy_unsigned_char_vector(const Unsigned_Char_Vector vector) {
+    Unsigned_Char_Vector_Status result = {NO_ERROR, {NULL, 0, 0}};
 
-    unsigned_char_Vector_Status vector_copy = {NO_ERROR,{NULL, 0, 0}};
+    Unsigned_Char_Vector_Status vector_copy = {NO_ERROR,{NULL, 0, 0}};
 
     vector_copy = allocate_unsigned_char_vector(vector.capacity);
     if (vector_copy.status != NO_ERROR) {
@@ -59,7 +59,7 @@ unsigned_char_Vector_Status copy_unsigned_char_vector(const unsigned_char_Vector
 }
 
 
-Status insert_unsigned_char_vector(unsigned_char_Vector *vector, const unsigned char item) {
+Status insert_unsigned_char_vector(Unsigned_Char_Vector *vector, const unsigned char item) {
     if (vector->size + 1 >=vector->capacity) {
         Status status = reallocate_unsigned_char_vector(
             vector,
@@ -75,7 +75,7 @@ Status insert_unsigned_char_vector(unsigned_char_Vector *vector, const unsigned 
     return NO_ERROR;
 }
 
-void free_unsigned_char_vector(unsigned_char_Vector *vector) {
+void free_unsigned_char_vector(Unsigned_Char_Vector *vector) {
     free(vector->data);
     vector->data = NULL;
     vector->size = 0;

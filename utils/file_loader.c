@@ -52,6 +52,22 @@ FileString load_file_to_memory(const char *filename) {
     return result;
 }
 
+FileString move_filestring(FileString *filestring) {
+    FileString result = {
+        0, NULL, 0
+    };
+
+    result.status = filestring->status;
+    result.start = filestring->start;
+    result.length = filestring->length;
+
+    filestring->status = 0;
+    filestring->start = NULL;
+    filestring->length = 0;
+
+    return result;
+}
+
 void free_filestring(FileString *filestring) {
     free(filestring->start);
     filestring->length = 0;
